@@ -9,6 +9,7 @@ Maintained by **iibobo** · [源码与问题反馈](https://github.com/iibobo/di
 当前 `0.3.0` 为待完成发布验收的候选版本。实际验证结果见
 [验证记录](docs/VALIDATION.md)，上架与企业离线部署见 [发布指南](docs/PUBLISHING.md)。
 CI 配置、候选 ZIP 或测试源码本身不表示已通过全部生产发布门禁。
+本次验收仅覆盖 **macOS**；Windows 和 Linux 尚未完成验收。
 
 ## 环境与构建
 

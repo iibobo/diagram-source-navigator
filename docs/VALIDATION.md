@@ -1,129 +1,100 @@
 # Release validation — 0.3.0
 
-Release only after every required gate has passed for the candidate source and
-artifact. Configured tasks and compiling test classes are not passing test results.
+## Scope and decision
 
-## Current evidence — 2026-11-21
+As agreed on 2026-11-21, current platform acceptance covers **macOS only**.
+Windows and Linux are deferred. The release remains a candidate: the maintainer
+has deferred rollback acceptance, and Marketplace submission has not occurred.
+A configured check, skipped test, or generated ZIP is not evidence of a pass.
 
-Local environment: macOS, IDEA 2026.2.3 (`262.10968.63`), bundled JBR 25.0.4,
-and project Gradle wrapper 9.2.1. The default terminal also has OpenJDK 25.0.2.
+## Gates
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Gradle environment | Passed | Wrapper starts; test compilation, instrumentation and packaging pass, including an offline rerun |
-| HTTP and security regression | Passed | Gradle `httpTest`: 325 real loopback HTTP checks; fixed the standalone runner's missing platform-library runtime classpath |
-| Real PSI integration | Passed | `NavigatorPsiTest`: 8 tests, zero failures/errors/skips; includes exact overloads, inheritance, actual editor opening, not-found completion, and navigation resuming after indexing |
-| Chrome DOM/network regression | Passed on the unchanged bridge | 12 real Chrome scenarios, including malformed mappings, deadlines, cancellation, keyboard, candidate choice, tab restoration and report download |
-| Reproducible offline build | Passed | Two current Python builds match; repeated Gradle packaging retains the recorded unsigned SHA-256 |
-| Archive contents | Passed | Both unsigned and signed candidates pass `scripts/check_distribution.py` |
-| Author signing | Passed | RSA-4096 self-signed certificate; `signPlugin`, `verifyPluginSignature`, and `signedPluginChecksum` succeeded |
-| Binary compatibility | Passed | CI run 44896157203: all seven declared IDEA versions passed; downloaded verdicts each say Compatible |
-| macOS CI | Passed | Run 44896157203: PSI, HTTP/security, browser and archive checks all succeeded |
-| Representative IDEA acceptance | Partially passed on macOS | Signed 0.3.0 installed and enabled after restart; synthetic project audit and individual editor checks passed (details below); rollback is deferred by the maintainer; automated offline core checks passed |
-| Marketplace submission | Pending | Account has reached the upload form with vendor `iibobo`; upload only after technical gates pass |
+| Gradle environment | Passed | Wrapper 9.2.1, JDK 25; compilation, instrumentation, packaging and offline checks succeed |
+| HTTP/security regression | Passed | 325 real loopback checks, locally and in macOS CI |
+| PSI integration | Passed | 8 tests; zero failures/errors/skips, including actual editor opening, exact overloads, inherited declarations, not-found completion and resuming after indexing |
+| Browser regression | Passed | 12 real Chrome scenarios; keyboard, candidate selection, mapping errors, cancellation, timeouts, tabs and report download |
+| Offline core | Passed automatically | OS-restricted Java PSI/HTTP tests plus browser request interception, detailed below |
+| Reproducible build | Passed | Repeated current Gradle packages retain the unsigned hash below; two Python builds also match each other |
+| Package and author signature | Passed | Both candidates pass the distribution checker; RSA-4096 signing and signature verification passed |
+| Binary compatibility | Passed | Run 44897419722: all seven declared IDEA versions passed; each downloaded verdict says Compatible |
+| macOS CI including offline checks | Passed | Test job 136825938155, run 44897419722, including the new OS-restricted checks |
+| Real IDEA acceptance | Passed except rollback | Signed 0.3.0 installation/restart, navigation, viewer controls and project shutdown verified below |
+| Rollback | Deferred by maintainer | No downgrade installed; retain as an outstanding release gate |
+| Marketplace submission | Pending | Vendor iibobo reached the upload form; submission waits for release gates |
 
-The current release acceptance scope is macOS only, per the maintainer’s
-2026-11-21 decision. Windows and Linux are deferred and are not release gates.
+## CI and compatibility evidence
 
-## Compatibility matrix
+- Initial complete pass: https://github.com/iibobo/diagram-source-navigator/actions/runs/44896157203
+  — source `03e6d483698a263ddf30e088dc6c8a038ef6cfaa`.
+- Latest verification: https://github.com/iibobo/diagram-source-navigator/actions/runs/44897419722
+  — source `9f2cfaa798ff1532904d783cd604309b36f39f49`.
+  This adds offline verification and browser test-driver hardening; production
+  classes and resources are unchanged. All seven refreshed compatibility verdicts
+  also say Compatible.
 
-Minimum stable build: `262.8665.258` (IDEA 2026.2). Until-build: `262.*`.
-JetBrains' official release API on 2026-11-21 lists these stable 2026.2 versions:
-2026.2, 2026.2.0.1, 2026.2.1, 2026.2.2, 2026.2.3, 2026.2.4, 2026.2.5.
-The CI Verifier matrix explicitly targets all seven. A later release requires new
-verification evidence. Local `verifyPlugin` defaults to the current installed SDK;
-`-PverificationVersion=2026.2` selects a specific distribution.
+Declared range: minimum stable build `262.8665.258`, until `262.*`.
+Verified matrix: 2026.2, 2026.2.0.1, 2026.2.1, 2026.2.2, 2026.2.3, 2026.2.4,
+2026.2.5. Later releases need new evidence. JetBrains release listing:
+https://data.services.jetbrains.com/products/releases?code=IIU&latest=false&type=release
 
-Source: https://data.services.jetbrains.com/products/releases?code=IIU&latest=false&type=release
+Downloaded latest reports are under `build/reports/ci/artifacts/44897419722/`. `-PverificationVersion=2026.2` selects a specific target.
+Local `verifyPlugin` defaults to the installed SDK. Local Verifier previously
+stalled during dependency download; passing CI reports provide the evidence.
 
-## Current signed candidate
+## Candidate identity
 
 - Unsigned ZIP: `build/distributions/diagram-source-navigator-0.3.0.zip`
 - Unsigned SHA-256: `b529c1767065c1ba4a305e0f8906093be6848f6ce105313d046a42b02b68bffe`
 - Signed ZIP: `build/distributions/diagram-source-navigator-0.3.0-signed.zip`
 - Signed SHA-256: `57563adb83acf3cd7ca09b673fe7f2b2029135dd65fc8faaa2eecb7797143bb8`
 - Public certificate: `docs/release-signing.crt`; expires 2027-11-21.
-- Certificate SHA-256 fingerprint: `CE:6F:3E:B2:60:06:6F:BA:D7:10:1C:2A:CB:82:A4:AB:30:B2:CD:8A:22:77:C4:E2:91:52:82:38:99:FD:1F:AF`.
+- Certificate SHA-256: `CE:6F:3E:B2:60:06:6F:BA:D7:10:1C:2A:CB:82:A4:AB:30:B2:CD:8A:22:77:C4:E2:91:52:82:38:99:FD:1F:AF`.
 
-The private key is outside Git in a directory with mode 0700 and file mode 0600.
-Only the public certificate is tracked. Signed and unsigned ZIPs have different
-hashes; record the exact uploaded signed file. No Marketplace token is required
-for a first manual upload.
+The private key is outside Git with directory mode 0700 and file mode 0600.
+Only the public certificate is tracked. Signed and unsigned ZIPs differ.
 
-## Remaining acceptance
-
-Use a separate IDEA sandbox and a representative project to check project/JDK
-classes, dependency JARs with and without source attachments, overload ambiguity,
-inherited declarations, indexing waits, diagram switching, project shutdown,
-keyboard navigation, zoom/tabs/full screen, offline use, installation and rollback.
-Keep project source fixtures synthetic; production audit reports may contain
-internal paths. Selected HTML is trusted executable content and is not sandboxed.
-
-Append actual CI run URLs, source commit, acceptance results, Verifier reports,
-and Marketplace review status as each gate completes. A failed, skipped, or
-unavailable required check remains a release blocker. Do not disable tests or
-instrumentation, or lower Verifier failure levels, to make a gate green.
-
-## Observed macOS IDEA acceptance — 2026-11-21
-
-The signed candidate was installed into IDEA 2026.2.3 and shown as enabled with
-version 0.3.0 and vendor iibobo after restarting. A separate synthetic Java 17
-project was opened; existing user projects were preserved.
-
-- Downloaded real navigation audit: `build/reports/manual/idea-navigation-audit.json`.
-  Two diagrams contain 12 targets: 11 opened, and the intentionally unspecified
-  `Worker.call(...)` returned the expected two overload candidates.
-- Selecting `Worker#call(java.lang.String)` reported success and opened Worker.java.
-  `Child#inherited()` opened its declaration in Parent.java.
-- An attached-source JAR opened WithSources.java; a binary-only JAR opened
-  BinaryOnly.class with IDEA's decompiler banner; JDK List opened List.java.
-- Keyboard navigation, switching diagrams, entering/exiting full screen, and
-  navigation after zoom were exercised successfully.
-- Closing only the synthetic project preserved the existing user project. A
-  navigation from the old paired browser page then failed with `Failed to fetch`,
-  confirming that the disposed project's loopback server no longer served it.
-
-The fixture has no external assets. This does not substitute for a complete
-network-isolated installation/rollback or indexing-wait acceptance result.
-The audit file is ignored because navigation reports contain local paths.
-
-CI run for source `db277b6b57b90d0a64f90e988c10828d674c9f50`:
-https://github.com/iibobo/diagram-source-navigator/actions/runs/44895517892
-This run completed successfully: macOS tests and all seven compatibility jobs passed.
-
-Additional local validation: `./gradlew --offline check buildPlugin pluginChecksum`
-passed on 2026-11-21. Eight PSI tests have zero failures/errors/skips; HTTP checks
-remain 325. This proves cached offline build operation, not network-isolated runtime.
-Latest macOS-only CI: https://github.com/iibobo/diagram-source-navigator/actions/runs/44896157203
-
-## Offline core evidence
-
-`python3 scripts/verify_offline_macos.py` passed with a macOS process sandbox:
-loopback connections succeeded, two external IP connections were rejected with
-EPERM, and all 8 PSI and 325 HTTP checks passed under the inherited restriction.
-Java uses IPv4 sockets for compatibility with the sandbox's loopback rule.
-Reports: `build/reports/offline/network-policy.log` and `gradle.log`.
-
-Chrome cannot start reliably inside the additional macOS sandbox. Browser
-regression instead intercepts requests before network access and denies every
-URL outside the loopback fixture origin. An explicit external-fetch probe fails,
-and all 12 scenarios pass. This is a browser request restriction, separate from
-the operating-system restriction verified for the Java core.
-
-The maintainer deferred rollback on 2026-11-21. No downgrade has been installed;
-0.3.0 remains installed. Rollback stays outstanding and submission remains blocked.
-
-## Artifact correspondence
-
-The signed ZIP remains the exact artifact listed above. Repeated Gradle packaging
-produced unsigned SHA-256 `b529c1767065c1ba4a305e0f8906093be6848f6ce105313d046a42b02b68bffe`.
-The CI unsigned ZIP has SHA-256 `3012222b1af472ac686bcb35d19f76cd1faac4b34dd02e6391fdc3bda42d2326`.
-Every JAR entry, including every class and resource, matches the local signed
-candidate except `META-INF/MANIFEST.MF`, whose build JVM/OS fields describe the
-respective environments. Comparison: `build/reports/ci/candidate-comparison.json`.
-The two Python packages match SHA-256
+CI's unsigned ZIP hash is
+`3012222b1af472ac686bcb35d19f76cd1faac4b34dd02e6391fdc3bda42d2326`.
+All JAR classes/resources match the signed candidate; only the manifest's build
+JVM/OS fields differ. Evidence: `build/reports/ci/latest-candidate-comparison.json`.
+The separately built Python package hash is
 `b15b0a08e10d6d816d3eff44e2fe03f46f8776c9fe1397f66061f0fff8c66463`;
-this is a separate build path and is not the uploaded signed ZIP.
+this is not the release's signed artifact.
 
-Downloaded compatibility reports reside under
-`build/reports/ci/artifacts/plugin-verifier-*/`. All seven verdicts are Compatible.
+## Offline verification
+
+`python3 scripts/verify_offline_macos.py` passed locally and in macOS CI.
+Its inherited process sandbox allows loopback and local IPC; an explicit probe
+confirms two external IP connections fail with EPERM. All 8 PSI and 325 HTTP
+checks run again with dependency downloads disabled. Java uses IPv4 sockets to
+match the sandbox's loopback filter. This does not change system network settings.
+
+Chrome cannot start reliably inside the additional OS sandbox. Browser tests
+instead intercept requests before network access and reject every URL outside
+the fixture origin. An external-fetch probe is observed and rejected, all 12
+scenarios pass, and unexpected external requests fail the suite. This browser
+request restriction is separate from the Java core's OS-level restriction.
+Reports are under `build/reports/offline/` and in CI artifacts.
+
+## Observed real IDEA acceptance
+
+Environment: macOS, IDEA 2026.2.3 (`262.10968.63`), JBR 25.0.4. The signed plugin
+was installed, restarted and shown as enabled with version 0.3.0/vendor iibobo.
+A separate synthetic Java 17 project preserved existing user projects.
+
+- Two diagrams have 12 targets: 11 opened; unspecified `Worker.call(...)` returned
+  two expected candidates. Selecting the String overload opened Worker.java.
+- `Child#inherited()` opened Parent.java. A source-attached dependency opened
+  WithSources.java; a binary-only dependency opened the decompiler. JDK List
+  opened List.java.
+- Keyboard navigation, diagram switching, full-screen entry/exit, and navigation
+  after zoom worked. Fixtures contain no external assets.
+- Closing only the fixture project preserved the user's existing project. The old
+  paired browser page then failed to connect, confirming its server was disposed.
+
+Audit: `build/reports/manual/idea-navigation-audit.json`. Reports contain local
+paths and are ignored by Git. Selected HTML remains trusted executable content.
+No downgrade or rollback test has been performed following the maintainer's
+request to defer it. No Marketplace upload or review approval is claimed.
