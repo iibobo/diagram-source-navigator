@@ -5,6 +5,13 @@
   <vendor url="https://github.com/iibobo" email="iibobo@zohomail.cn">iibobo</vendor>
   <description><![CDATA[
     <p>Navigate from local Mermaid class diagrams to Java classes and methods in IntelliJ IDEA.</p>
+    <p><b>Companion skill:</b> use
+    <a href="https://github.com/iibobo/skills">iibobo skills</a> and its
+    <a href="https://github.com/iibobo/skills/blob/main/skills/engineering/render-class-diagrams/SKILL.md">render-class-diagrams</a>
+    skill to generate offline HTML class diagrams with Java source mappings.
+    <a href="https://github.com/iibobo/skills/blob/main/docs/installation.md">Install the skill</a>,
+    generate a diagram from your Java sources, then open its HTML through this plugin.
+    The skill creates the diagram; this plugin opens declarations in your current IDEA project.</p>
     <ul>
       <li>Open project declarations, attached dependency sources, or decompiled JAR classes.</li>
       <li>Resolve overloaded and inherited methods using fully qualified class and parameter mappings.</li>
@@ -15,6 +22,9 @@
     Tools → Open Class Diagram with Source Navigation. The diagram must provide source mappings;
     arbitrary flowcharts are not supported. No Mermaid runtime is bundled.</p>
     <p>中文：从本地 Mermaid 类图跳转到项目 Java 源码、依赖源码或反编译声明。导航在本机完成，不收集遥测。</p>
+    <p><b>配套技能：</b><a href="https://github.com/iibobo/skills">iibobo skills</a>
+    中的 render-class-diagrams 用于生成带源码定位信息的离线 HTML 类图；本插件负责在当前 IDEA 项目中打开声明。
+    也可使用其他提供兼容源码映射的可信 HTML 类图。</p>
   ]]></description>
   <change-notes><![CDATA[
     <p>0.3.0: production-hardening release preparation.</p>

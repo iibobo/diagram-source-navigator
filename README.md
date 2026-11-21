@@ -6,6 +6,18 @@ Maintained by **iibobo** · [源码与问题反馈](https://github.com/iibobo/di
 
 从本地 Mermaid 类图点击 Java 类或方法，在 IntelliJ IDEA 中定位项目源码、依赖 JAR 的关联源码或反编译视图。插件是独立项目，不依赖 Spring AI、原仓库的技能目录、源文件副本或 Maven reactor。
 
+## 配套技能
+
+推荐配合 [iibobo skills](https://github.com/iibobo/skills) 中的
+[render-class-diagrams](https://github.com/iibobo/skills/blob/main/skills/engineering/render-class-diagrams/SKILL.md)
+使用。技能负责根据真实 Java 源码生成带源码定位信息的离线类图，本插件负责在 IDEA 当前项目中打开对应声明。
+按[技能安装指南](https://github.com/iibobo/skills/blob/main/docs/installation.md)安装后，可这样提出需求：
+
+> 根据当前 Java 模块源码绘制类与接口关系图，输出可离线打开的 HTML，包含类和方法的源码导航映射。
+
+将生成的 HTML 与相邻 `.assets/` 目录一起保存，在 IDEA 的 **Tools → Open Class Diagram with Source Navigation…**
+中选择 HTML，然后点击类名或方法名。其他提供兼容源码映射的可信 HTML 也可使用。
+
 当前 `0.3.0` 为待完成发布验收的候选版本。实际验证结果见
 [验证记录](docs/VALIDATION.md)，上架与企业离线部署见 [发布指南](docs/PUBLISHING.md)。
 CI 配置、候选 ZIP 或测试源码本身不表示已通过全部生产发布门禁。
