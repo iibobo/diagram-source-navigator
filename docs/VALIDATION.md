@@ -16,7 +16,7 @@ A configured check, skipped test, or generated ZIP is not evidence of a pass.
 | PSI integration | Passed | 8 tests; zero failures/errors/skips, including actual editor opening, exact overloads, inherited declarations, not-found completion and resuming after indexing |
 | Browser regression | Passed | 12 real Chrome scenarios; keyboard, candidate selection, mapping errors, cancellation, timeouts, tabs and report download |
 | Offline core | Passed automatically | OS-restricted Java PSI/HTTP tests plus browser request interception, detailed below |
-| Reproducible build | Passed | Repeated current Gradle packages retain the unsigned hash below; two Python builds also match each other |
+| Reproducible build | Previously passed | Earlier candidate packages were reproduced; the latest descriptor-only package was not built twice |
 | Package and author signature | Passed | Both candidates pass the distribution checker; RSA-4096 signing and signature verification passed |
 | Binary compatibility | Passed | Run 44897419722: all seven declared IDEA versions passed; each downloaded verdict says Compatible |
 | macOS CI including offline checks | Passed | Test job 136825938155, run 44897419722, including the new OS-restricted checks |
@@ -46,9 +46,9 @@ stalled during dependency download; passing CI reports provide the evidence.
 ## Candidate identity
 
 - Unsigned ZIP: `build/distributions/diagram-source-navigator-0.3.0.zip`
-- Unsigned SHA-256: `b529c1767065c1ba4a305e0f8906093be6848f6ce105313d046a42b02b68bffe`
+- Unsigned SHA-256: `c018b490ad475e69a31a0dc0ca7489e49e6f83e483090b9819d71c3137c93eac`
 - Signed ZIP: `build/distributions/diagram-source-navigator-0.3.0-signed.zip`
-- Signed SHA-256: `38f856037f2d05647b17634bccf1aa4fb1e73e6e798dc70896eb9fcec867c21c`
+- Signed SHA-256: `f02431d1278553c80185fb2c337e68a4701b42dfe6bcb90d137a403995101dba`
 - Public certificate: `docs/release-signing.crt`; expires 2037-11-21.
 - Certificate SHA-256: `8D:8D:CB:4D:2E:8F:14:CB:A8:06:D4:21:30:65:4F:78:6B:A9:9D:CF:12:F3:BA:4B:CC:AF:3F:6F:06:02:29:B2`.
 
@@ -57,8 +57,10 @@ Only the public certificate is tracked. Signed and unsigned ZIPs differ.
 
 CI's unsigned ZIP hash is
 `3012222b1af472ac686bcb35d19f76cd1faac4b34dd02e6391fdc3bda42d2326`.
-All JAR classes/resources match the signed candidate; only the manifest's build
-JVM/OS fields differ. Evidence: `build/reports/ci/latest-candidate-comparison.json`.
+Runtime classes and browser resources match the latest candidate. The current
+JAR differs from that CI artifact in the manifest build fields and the updated
+plugin descriptor. See `build/reports/latest-release.json`; the older comparison
+at `build/reports/ci/latest-candidate-comparison.json` describes the pre-listing candidate.
 The separately built Python package hash is
 `b15b0a08e10d6d816d3eff44e2fe03f46f8776c9fe1397f66061f0fff8c66463`;
 this is not the release's signed artifact.
@@ -107,3 +109,16 @@ again and independently verified with Marketplace ZIP Signer 0.1.45. Its JAR is
 identical to the unsigned package; prior PSI/browser/compatibility evidence
 applies to the unchanged plugin payload. The installed copy and earlier evidence
 archive used the old certificate; no reinstall or Marketplace upload is claimed.
+
+## Listing update candidate — 2026-11-21
+
+Rebuilt and signed source `74a6aaa758204069cecf8e78bd79737b229d3c3f` with the existing 2037-expiry certificate.
+Local Gradle check, 8 PSI tests, 325 HTTP checks, both archive checks, and
+independent ZIP Signer verification passed. The only JAR entry changed since
+the previous signed candidate is META-INF/plugin.xml (companion skill description).
+Runtime classes and browser resources are byte-identical. The earlier seven-version
+compatibility reports remain evidence for those classes; the matrix was not rerun
+for this descriptor-only change. Current identities supersede older archive hashes.
+Screenshots are separate Marketplace Media assets, not automatically uploaded
+by signing the ZIP. Rollback remains deferred; Marketplace is not submitted.
+See build/reports/latest-release.json and latest-release-build.log.
