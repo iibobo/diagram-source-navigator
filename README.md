@@ -97,7 +97,7 @@ HTML 启动时读取有界快照（最多 32 MiB），映射与页面保持一�
 这些 HTTP 测试注入模拟导航器，**不能代替 IDEA 内的 PSI 集成验收**。
 `NavigatorPsiTest` 使用真实 IDEA 测试框架覆盖重载、继承、未找到和打开声明终态；
 浏览器测试使用真实 Chrome DOM/网络及受控 HTTP fixture。`.github/workflows/verify.yml`
-配置了 Windows/macOS/Linux 三系统测试及 Plugin Verifier；实际通过状态以 CI 报告为准。
+配置了 Windows/macOS/Linux macOS 与 Windows测试及 Plugin Verifier；实际通过状态以 CI 报告为准。
 安装后还需检查：
 
 - 示例中的 `List`、`size()`、`get(int)` 能打开 JDK 声明。

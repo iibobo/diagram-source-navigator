@@ -10,7 +10,7 @@ The ID must remain stable after the first public release.
 Version `0.3.0` is prepared as a release candidate. Before calling it a production
 release, retain evidence for all of the following:
 
-- The three-OS CI matrix passes real HTTP, browser, and PSI tests. A configured
+- The macOS/Windows CI matrix passes real HTTP, browser, and PSI tests. A configured
   workflow is not evidence that it has run; record the candidate commit and actual run URL.
 - Plugin Verifier passes against the supported IDEA build. The configured target
   defaults to the current SDK locally. CI verifies every stable 2026.2 release

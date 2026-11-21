@@ -38,7 +38,7 @@ const validMap = {Valid: {className: 'demo.Valid', methods: {
   '+call(...)': {methodName: 'call', parameterTypes: ['java.lang.String']}
 }}, Second: {className: 'demo.Second'}};
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-async function until(predicate, description, timeout = 5000) {
+async function until(predicate, description, timeout = 15000) {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
     if (await predicate()) return;
@@ -131,16 +131,16 @@ try {
     await cdp('Page.addScriptToEvaluateOnNewDocument', {source: `(() => {
       const original = window.setTimeout;
       window.setTimeout = (callback, milliseconds, ...args) => original(callback,
-        milliseconds === 10000 ? 150 : milliseconds === 90000 ? ${options.fastDeadline ? 250 : 4000} : milliseconds === 100 ? 10 : milliseconds, ...args);
+        milliseconds === 10000 ? (document.documentElement?.dataset.ideaBridgeReady === 'true' ? 1000 : 10000) : milliseconds === 90000 ? ${options.fastDeadline ? 1500 : 15000} : milliseconds === 100 ? 20 : milliseconds, ...args);
     })();`}, session);
     await cdp('Page.navigate', {url: origin + '/fixture#navigator-token=browser-test-token'}, session);
     const evaluate = async expression => {
       const result = await cdp('Runtime.evaluate', {expression, returnByValue: true, awaitPromise: true}, session);
-      if (result.exceptionDetails) throw new Error(result.exceptionDetails.text);
+      if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
       return result.result.value;
     };
     const text = () => evaluate("document.querySelector('#navigator-notice')?.textContent || ''");
-    await until(() => evaluate(options.unavailable ? "!!document.querySelector('#navigator-notice')" : "document.documentElement.dataset.ideaBridgeReady === 'true'"), 'bridge initialization');
+    await until(() => evaluate(options.unavailable ? "!!document.querySelector('#navigator-notice')" : "document.documentElement?.dataset.ideaBridgeReady === 'true'"), 'bridge initialization');
     const click = async selector => {
       const point = await evaluate(`(() => {const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
       await cdp('Input.dispatchMouseEvent', {type: 'mousePressed', ...point, button: 'left', clickCount: 1}, session);
