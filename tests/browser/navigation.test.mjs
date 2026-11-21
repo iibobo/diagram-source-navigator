@@ -14,7 +14,7 @@ const executable = process.env.CHROME_BIN || (process.platform === 'darwin'
 const bridge = await readFile(fileURLToPath(new URL('../../src/main/resources/navigator-bridge.js', import.meta.url)), 'utf8');
 const temporary = await mkdtemp(join(tmpdir(), 'navigator-browser-'));
 const connections = new Set();
-let scenario, checks = 0, chrome, http;
+let scenario, checks = 0, chrome, http, pageText;
 const json = (response, data, status = 200) => {
   response.writeHead(status, {'Content-Type': 'application/json'});
   response.end(JSON.stringify(data));
@@ -44,7 +44,7 @@ async function until(predicate, description, timeout = 15000) {
     if (await predicate()) return;
     await delay(20);
   }
-  throw new Error('Timed out: ' + description);
+  throw new Error('Timed out: ' + description + '\nScenario: ' + JSON.stringify(scenario) + '\nNotice: ' + (await pageText?.()));
 }
 
 try {
@@ -63,7 +63,8 @@ try {
         if (path === '/api/symbol-map') {
           json(response, scenario.symbols ?? {Valid: 'demo.Valid', Second: 'demo.Second'}, scenario.unavailable ? 403 : 200); return;
         }
-        if (request.method === 'DELETE') { scenario.cancelled.push(path); json(response, {status: 'cancelled'}); return; }
+        // Chrome may retry idempotent DELETE requests; count cancelled task IDs.
+        if (request.method === 'DELETE') { if (!scenario.cancelled.includes(path)) scenario.cancelled.push(path); json(response, {status: 'cancelled'}); return; }
         if (path === '/api/navigate') {
           let body = ''; for await (const chunk of request) body += chunk;
           scenario.requests.push(JSON.parse(body));
@@ -88,7 +89,7 @@ try {
   const origin = 'http://127.0.0.1:' + http.address().port;
   chrome = spawn(executable, ['--headless=new', '--no-first-run', '--no-default-browser-check',
     '--disable-background-networking', '--disable-component-update', '--disable-sync', '--metrics-recording-only',
-    '--password-store=basic', '--user-data-dir=' + join(temporary, 'profile'), '--remote-debugging-pipe', 'about:blank'],
+    '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--password-store=basic', '--user-data-dir=' + join(temporary, 'profile'), '--remote-debugging-pipe', 'about:blank'],
     {stdio: ['ignore', 'ignore', 'pipe', 'pipe', 'pipe']});
   let serial = 0, buffer = '', diagnostics = '';
   const pending = new Map(), errors = new Map();
@@ -131,7 +132,7 @@ try {
     await cdp('Page.addScriptToEvaluateOnNewDocument', {source: `(() => {
       const original = window.setTimeout;
       window.setTimeout = (callback, milliseconds, ...args) => original(callback,
-        milliseconds === 10000 ? (document.documentElement?.dataset.ideaBridgeReady === 'true' ? 1000 : 10000) : milliseconds === 90000 ? ${options.fastDeadline ? 1500 : 15000} : milliseconds === 100 ? 20 : milliseconds, ...args);
+        milliseconds === 10000 ? ${['body-stall', 'post-stall'].includes(options.mode) ? 1500 : 10000} : milliseconds === 90000 ? ${options.fastDeadline ? 1500 : 90000} : milliseconds === 100 ? 20 : milliseconds, ...args);
     })();`}, session);
     await cdp('Page.navigate', {url: origin + '/fixture#navigator-token=browser-test-token'}, session);
     const evaluate = async expression => {
@@ -140,6 +141,7 @@ try {
       return result.result.value;
     };
     const text = () => evaluate("document.querySelector('#navigator-notice')?.textContent || ''");
+    pageText = text;
     await until(() => evaluate(options.unavailable ? "!!document.querySelector('#navigator-notice')" : "document.documentElement?.dataset.ideaBridgeReady === 'true'"), 'bridge initialization');
     const click = async selector => {
       const point = await evaluate(`(() => {const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);

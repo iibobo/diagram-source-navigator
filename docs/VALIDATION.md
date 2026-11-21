@@ -22,6 +22,9 @@ and project Gradle wrapper 9.2.1. The default terminal also has OpenJDK 25.0.2.
 | Representative IDEA acceptance | Pending | Run the acceptance matrix below against the final candidate |
 | Marketplace submission | Pending | Account has reached the upload form with vendor `iibobo`; upload only after technical gates pass |
 
+The operating-system acceptance scope is macOS and Windows only. Linux is not
+a required release gate.
+
 ## Compatibility matrix
 
 Minimum stable build: `262.8665.258` (IDEA 2026.2). Until-build: `262.*`.
