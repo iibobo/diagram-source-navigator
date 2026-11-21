@@ -9,22 +9,24 @@ https://github.com/iibobo/skills and explains the companion
 The skill produces source-mapped diagrams; the IDEA plugin opens declarations.
 Compatible HTML from another generator remains supported.
 
-## Top demo
+## Ordered homepage screenshots
 
-The maintainer will supply the recording. No demo has been recorded or uploaded.
-After the asset is supplied:
+The maintainer supplied four annotated PNG screenshots. README displays all four
+near the top in their original order; images are copied without edits.
 
-1. Review it for readable text and private information. Prefer a 1280 × 800 GIF
-   with a short sequence: open the generated HTML through Tools, click a class,
-   click a method, and show the actual IDEA declaration. MP4 can be converted
-   into a GIF; retain the original recording separately.
-2. Save the reviewed GIF as `docs/media/source-navigation-demo.gif` and place it
-   directly below the README title. Do not add a broken placeholder image.
-3. After the plugin listing exists, add the GIF to the first Media position in
-   its Marketplace admin panel. Descriptor HTML alone does not configure the
-   Marketplace Media gallery. Verify the resulting public page and IDEA listing.
-4. Rebuild, sign and check the final candidate after descriptor/media edits.
-   Current desktop packages predate these listing edits and remain unchanged.
+| Order | Asset under `docs/media/` | Caption |
+| --- | --- | --- |
+| 1 | `01-install-plugin.png` | Install and enable Diagram Source Navigator |
+| 2 | `02-open-diagram.png` | Open HTML through the IDEA Tools action |
+| 3 | `03-add-skills-marketplace.png` | Add the companion skills marketplace |
+| 4 | `04-generate-diagram.png` | Invoke the class-diagram skill |
+
+When the Marketplace listing exists, upload these four assets to its Media
+section in order 1–4. README and descriptor edits do not upload Marketplace media.
+The first screenshot shows the Installed tab, not evidence of public Marketplace
+availability. The recording work is deferred in favor of the supplied screenshots.
+Rebuild and sign the candidate after descriptor edits; current desktop packages
+predate the companion-skill description edits and remain unchanged.
 
 The plugin has not yet been submitted to Marketplace; rollback acceptance is
 still deferred. Preparing listing materials does not publish the plugin.

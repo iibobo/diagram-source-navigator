@@ -6,6 +6,34 @@ Maintained by **iibobo** · [源码与问题反馈](https://github.com/iibobo/di
 
 从本地 Mermaid 类图点击 Java 类或方法，在 IntelliJ IDEA 中定位项目源码、依赖 JAR 的关联源码或反编译视图。插件是独立项目，不依赖 Spring AI、原仓库的技能目录、源文件副本或 Maven reactor。
 
+## 使用步骤
+
+以下截图按提供的 1 → 4 顺序展示。
+
+### 1. 安装并确认插件
+
+安装并启用 Diagram Source Navigator。
+
+![1. 安装并确认插件](docs/media/01-install-plugin.png)
+
+### 2. 在 IDEA 中打开 HTML 类图
+
+通过 Tools → Open Class Diagram with Source Navigation… 选择 HTML 文件。
+
+![2. 在 IDEA 中打开 HTML 类图](docs/media/02-open-diagram.png)
+
+### 3. 添加配套技能市场
+
+在 Codex 中添加技能仓库 https://github.com/iibobo/skills，按安装指南安装配套技能。
+
+![3. 添加配套技能市场](docs/media/03-add-skills-marketplace.png)
+
+### 4. 调用技能生成类图
+
+调用绘制类图技能，描述需要梳理的 Java 模块并生成带源码导航信息的 HTML。
+
+![4. 调用技能生成类图](docs/media/04-generate-diagram.png)
+
 ## 配套技能
 
 推荐配合 [iibobo skills](https://github.com/iibobo/skills) 中的
