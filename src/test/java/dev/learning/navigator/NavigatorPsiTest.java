@@ -76,6 +76,30 @@ public final class NavigatorPsiTest extends LightJavaCodeInsightFixtureTestCase 
     }
   }
 
+  public void testNavigationWaitsForIndexesThenOpensDeclaration() throws Exception {
+    var target = myFixture.addClass("package demo; public class Indexed {}");
+    var manager = FileEditorManager.getInstance(getProject());
+    for (var file : manager.getOpenFiles()) manager.closeFile(file);
+    var service = new NavigatorService(getProject());
+    var task = new NavigationTask(Duration.ofSeconds(30));
+    var indexing = com.intellij.testFramework.DumbModeTestUtils.startEternalDumbModeTask(getProject());
+    try {
+      navigate(service, new NavigationRequest("demo.Indexed", null, null, null), task);
+      PlatformTestUtil.dispatchAllEventsInIdeEventQueue();
+      assertFalse("Navigation must wait while indexes are unavailable", task.result.isDone());
+      assertEmpty(manager.getOpenFiles());
+    } finally {
+      com.intellij.testFramework.DumbModeTestUtils.endEternalDumbModeTaskAndWaitForSmartMode(getProject(), indexing);
+    }
+    try {
+      PlatformTestUtil.waitWithEventsDispatching("Navigation did not resume", task.result::isDone, 15);
+      assertEquals("opened", task.result.join().get("status"));
+      assertContainsElements(List.of(manager.getSelectedFiles()), target.getContainingFile().getVirtualFile());
+    } finally {
+      service.dispose();
+    }
+  }
+
   private static void navigate(NavigatorService service, NavigationRequest request, NavigationTask task) throws Exception {
     Method method = NavigatorService.class.getDeclaredMethod("navigate", NavigationRequest.class, NavigationTask.class);
     method.setAccessible(true);
