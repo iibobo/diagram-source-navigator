@@ -1,0 +1,39 @@
+<idea-plugin url="https://github.com/iibobo/diagram-source-navigator">
+  <id>dev.learning.diagram-source-navigator</id>
+  <name>Diagram Source Navigator</name>
+  <!-- Version is injected from gradle.properties by both build paths. -->
+  <vendor url="https://github.com/iibobo" email="iibobo@zohomail.cn">iibobo</vendor>
+  <description><![CDATA[
+    <p>Navigate from local Mermaid class diagrams to Java classes and methods in IntelliJ IDEA.</p>
+    <ul>
+      <li>Open project declarations, attached dependency sources, or decompiled JAR classes.</li>
+      <li>Resolve overloaded and inherited methods using fully qualified class and parameter mappings.</li>
+      <li>Use keyboard navigation and export a report of diagram navigation checks.</li>
+      <li>Process navigation locally with a project-scoped, authenticated loopback service; no telemetry.</li>
+    </ul>
+    <p>Requires IntelliJ IDEA 2026.2.x with Java support. Open a trusted local HTML class diagram from
+    Tools → Open Class Diagram with Source Navigation. The diagram must provide source mappings;
+    arbitrary flowcharts are not supported. No Mermaid runtime is bundled.</p>
+    <p>中文：从本地 Mermaid 类图跳转到项目 Java 源码、依赖源码或反编译声明。导航在本机完成，不收集遥测。</p>
+  ]]></description>
+  <change-notes><![CDATA[
+    <p>0.3.0: production-hardening release preparation.</p>
+    <ul>
+      <li>Harden navigation request validation, cancellation, and local resource boundaries.</li>
+      <li>Add browser and PSI regression checks and a cross-platform release verification pipeline.</li>
+      <li>Unify version metadata and add reproducible offline archives, checksums, and publishing documentation.</li>
+    </ul>
+  ]]></change-notes>
+  <idea-version since-build="262.8665.258" until-build="262.*"/>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.java</depends>
+  <extensions defaultExtensionNs="com.intellij">
+    <projectService serviceImplementation="dev.learning.navigator.NavigatorService"/>
+  </extensions>
+  <actions>
+    <action id="DiagramNavigator.Open" class="dev.learning.navigator.OpenDiagramAction"
+            text="Open Class Diagram with Source Navigation…" description="Select a local HTML class diagram and enable Java source navigation">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+  </actions>
+</idea-plugin>

@@ -1,0 +1,62 @@
+# Gradle, IntelliJ Platform SDKs, sandboxes, and build outputs
+build/
+.gradle/
+.intellijPlatform/
+out/
+*.class
+*.jar
+*.zip
+*.zip.sha256
+
+# The wrapper bootstrap JAR is required for reproducible builds.
+!/gradle/wrapper/gradle-wrapper.jar
+
+# Local IDE project state
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Python caches and local virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Local JavaScript tooling
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Signing keys, credentials, and local environment overrides
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+/local.properties
+
+# Runtime diagnostics, editor backups, and temporary files
+*.log
+*.hprof
+*.jfr
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*~
+
+# Operating-system metadata
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini

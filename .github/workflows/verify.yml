@@ -1,0 +1,86 @@
+name: Verify plugin
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - name: Real PSI and navigation completion tests
+        run: ./gradlew --no-daemon --console=plain test
+      - name: Real HTTP contract and security tests
+        if: ${{ !cancelled() }}
+        run: ./gradlew --no-daemon --console=plain httpTest
+      - name: Real browser bridge tests
+        if: ${{ !cancelled() }}
+        run: node tests/browser/navigation.test.mjs
+      - name: Package and verify archive
+        run: |
+          ./gradlew --no-daemon --console=plain buildPlugin pluginChecksum
+          python scripts/check_distribution.py build/distributions/*.zip
+      - name: Preserve verification evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verification-${{ matrix.os }}
+          path: |
+            build/reports/
+            build/test-results/
+            build/distributions/
+          if-no-files-found: warn
+
+  binary-compatibility:
+    name: Plugin Verifier (${{ matrix.idea }})
+    needs: tests
+    strategy:
+      fail-fast: false
+      matrix:
+        idea: ['2026.2', '2026.2.0.1', '2026.2.1', '2026.2.2', '2026.2.3', '2026.2.4', '2026.2.5']
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - run: ./gradlew --no-daemon --console=plain verifyPlugin -PverificationVersion=${{ matrix.idea }}
+      - name: Preserve verifier report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: plugin-verifier-${{ matrix.idea }}
+          path: build/reports/pluginVerifier/
+          if-no-files-found: warn
