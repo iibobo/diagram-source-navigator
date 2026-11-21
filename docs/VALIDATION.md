@@ -19,7 +19,7 @@ and project Gradle wrapper 9.2.1. The default terminal also has OpenJDK 25.0.2.
 | Author signing | Passed | RSA-4096 self-signed certificate; `signPlugin`, `verifyPluginSignature`, and `signedPluginChecksum` succeeded |
 | Binary compatibility | In progress | Local Verifier resolved the current SDK but stalled downloading a transitive plugin; CI must verify the complete release matrix |
 | macOS/Windows CI | Pending | Workflow must execute on the candidate commit; preserve actual run URLs and reports |
-| Representative IDEA acceptance | Pending | Run the acceptance matrix below against the final candidate |
+| Representative IDEA acceptance | Partially passed on macOS | Signed 0.3.0 installed and enabled after restart; synthetic project audit and individual editor checks passed (details below); rollback and indexing-wait acceptance remain pending |
 | Marketplace submission | Pending | Account has reached the upload form with vendor `iibobo`; upload only after technical gates pass |
 
 The operating-system acceptance scope is macOS and Windows only. Linux is not
@@ -63,3 +63,30 @@ Append actual CI run URLs, source commit, acceptance results, Verifier reports,
 and Marketplace review status as each gate completes. A failed, skipped, or
 unavailable required check remains a release blocker. Do not disable tests or
 instrumentation, or lower Verifier failure levels, to make a gate green.
+
+## Observed macOS IDEA acceptance — 2026-11-21
+
+The signed candidate was installed into IDEA 2026.2.3 and shown as enabled with
+version 0.3.0 and vendor iibobo after restarting. A separate synthetic Java 17
+project was opened; existing user projects were preserved.
+
+- Downloaded real navigation audit: `build/reports/manual/idea-navigation-audit.json`.
+  Two diagrams contain 12 targets: 11 opened, and the intentionally unspecified
+  `Worker.call(...)` returned the expected two overload candidates.
+- Selecting `Worker#call(java.lang.String)` reported success and opened Worker.java.
+  `Child#inherited()` opened its declaration in Parent.java.
+- An attached-source JAR opened WithSources.java; a binary-only JAR opened
+  BinaryOnly.class with IDEA's decompiler banner; JDK List opened List.java.
+- Keyboard navigation, switching diagrams, entering/exiting full screen, and
+  navigation after zoom were exercised successfully.
+- Closing only the synthetic project preserved the existing user project. A
+  navigation from the old paired browser page then failed with `Failed to fetch`,
+  confirming that the disposed project's loopback server no longer served it.
+
+The fixture has no external assets. This does not substitute for a complete
+network-isolated installation/rollback or indexing-wait acceptance result.
+The audit file is ignored because navigation reports contain local paths.
+
+CI run for source `db277b6b57b90d0a64f90e988c10828d674c9f50`:
+https://github.com/iibobo/diagram-source-navigator/actions/runs/44895517892
+Results are pending; do not treat the configured matrix as passed.
