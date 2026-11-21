@@ -14,6 +14,7 @@ const executable = process.env.CHROME_BIN || (process.platform === 'darwin'
 const bridge = await readFile(fileURLToPath(new URL('../../src/main/resources/navigator-bridge.js', import.meta.url)), 'utf8');
 const temporary = await mkdtemp(join(tmpdir(), 'navigator-browser-'));
 const connections = new Set();
+const blockedExternalRequests = new Set();
 let scenario, checks = 0, chrome, http, pageText;
 const json = (response, data, status = 200) => {
   response.writeHead(status, {'Content-Type': 'application/json'});
@@ -104,6 +105,13 @@ try {
       if (message.id && pending.has(message.id)) {
         const entry = pending.get(message.id); pending.delete(message.id);
         if (message.error) entry.reject(new Error(JSON.stringify(message.error))); else entry.resolve(message.result);
+      } else if (message.method === 'Fetch.requestPaused') {
+        const {requestId, request} = message.params;
+        const local = new URL(request.url).origin === origin;
+        if (!local) blockedExternalRequests.add(request.url);
+        void cdp(local ? 'Fetch.continueRequest' : 'Fetch.failRequest',
+          local ? {requestId} : {requestId, errorReason: 'InternetDisconnected'}, message.sessionId)
+          .catch(() => {}); // Closing a test target also cancels its paused requests.
       } else if (message.method === 'Runtime.exceptionThrown') {
         const list = errors.get(message.sessionId);
         list?.push(message.params.exceptionDetails.text + ': ' + message.params.exceptionDetails.exception?.description);
@@ -129,6 +137,8 @@ try {
     errors.set(session, []);
     await cdp('Page.enable', {}, session);
     await cdp('Runtime.enable', {}, session);
+    // Block every non-fixture URL before DNS or network access.
+    await cdp('Fetch.enable', {patterns: [{urlPattern: '*'}]}, session);
     await cdp('Page.addScriptToEvaluateOnNewDocument', {source: `(() => {
       const original = window.setTimeout;
       window.setTimeout = (callback, milliseconds, ...args) => original(callback,
@@ -157,6 +167,8 @@ try {
   await check('class click, explicit method mapping, keyboard access, and fragment removal', async () => {
     const page = await open();
     assert.equal(await page.evaluate('location.hash'), '');
+    assert.equal(await page.evaluate("fetch('https://offline-probe.invalid/').then(() => false, () => true)"), true);
+    assert.equal(blockedExternalRequests.has('https://offline-probe.invalid/'), true);
     await page.click('#class-valid');
     await until(async () => (await page.text()).includes('已在 IDEA 打开'), 'class navigation');
     assert.deepEqual(scenario.requests[0], {className: 'demo.Valid'});
@@ -265,12 +277,17 @@ try {
     assert.equal(scenario.requests.length, 0);
     assert.deepEqual(errors.get(page.session), []);
   });
+  assert.deepEqual([...blockedExternalRequests], ['https://offline-probe.invalid/']);
   console.log(`PASS ${checks} real-Chrome browser scenarios`);
 } finally {
-  if (chrome && chrome.exitCode === null) {
+  if (chrome && chrome.exitCode === null && chrome.signalCode === null) {
+    const exited = new Promise(resolve => chrome.once('exit', resolve));
     chrome.kill('SIGTERM');
-    await Promise.race([new Promise(resolve => chrome.once('exit', resolve)), delay(2000)]);
-    if (chrome.exitCode === null) { chrome.kill('SIGKILL'); await new Promise(resolve => chrome.once('exit', resolve)); }
+    await Promise.race([exited, delay(2000)]);
+    if (chrome.exitCode === null && chrome.signalCode === null) {
+      chrome.kill('SIGKILL');
+      await Promise.race([exited, delay(2000)]);
+    }
   }
   for (const connection of connections) connection.destroy();
   if (http) await new Promise(resolve => http.close(resolve));

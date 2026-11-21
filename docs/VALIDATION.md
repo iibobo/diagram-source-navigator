@@ -12,14 +12,14 @@ and project Gradle wrapper 9.2.1. The default terminal also has OpenJDK 25.0.2.
 | --- | --- | --- |
 | Gradle environment | Passed | Wrapper starts; test compilation, instrumentation and packaging pass, including an offline rerun |
 | HTTP and security regression | Passed | Gradle `httpTest`: 325 real loopback HTTP checks; fixed the standalone runner's missing platform-library runtime classpath |
-| Real PSI integration | Passed | `NavigatorPsiTest`: 7 tests, zero failures/errors/skips; includes exact overloads, inheritance, actual editor opening, and not-found completion |
+| Real PSI integration | Passed | `NavigatorPsiTest`: 8 tests, zero failures/errors/skips; includes exact overloads, inheritance, actual editor opening, not-found completion, and navigation resuming after indexing |
 | Chrome DOM/network regression | Passed on the unchanged bridge | 12 real Chrome scenarios, including malformed mappings, deadlines, cancellation, keyboard, candidate choice, tab restoration and report download |
-| Reproducible offline build | Passed historically | Two identical Python builds produced matching bytes; their earlier hash is not the current Gradle artifact hash |
+| Reproducible offline build | Passed | Two current Python builds match; repeated Gradle packaging retains the recorded unsigned SHA-256 |
 | Archive contents | Passed | Both unsigned and signed candidates pass `scripts/check_distribution.py` |
 | Author signing | Passed | RSA-4096 self-signed certificate; `signPlugin`, `verifyPluginSignature`, and `signedPluginChecksum` succeeded |
-| Binary compatibility | In progress | Local Verifier resolved the current SDK but stalled downloading a transitive plugin; CI must verify the complete release matrix |
-| macOS CI | Pending | Workflow must execute on the candidate commit; preserve actual run URLs and reports |
-| Representative IDEA acceptance | Partially passed on macOS | Signed 0.3.0 installed and enabled after restart; synthetic project audit and individual editor checks passed (details below); rollback and indexing-wait acceptance remain pending |
+| Binary compatibility | Passed | CI run 44896157203: all seven declared IDEA versions passed; downloaded verdicts each say Compatible |
+| macOS CI | Passed | Run 44896157203: PSI, HTTP/security, browser and archive checks all succeeded |
+| Representative IDEA acceptance | Partially passed on macOS | Signed 0.3.0 installed and enabled after restart; synthetic project audit and individual editor checks passed (details below); rollback is deferred by the maintainer; automated offline core checks passed |
 | Marketplace submission | Pending | Account has reached the upload form with vendor `iibobo`; upload only after technical gates pass |
 
 The current release acceptance scope is macOS only, per the maintainer’s
@@ -89,4 +89,41 @@ The audit file is ignored because navigation reports contain local paths.
 
 CI run for source `db277b6b57b90d0a64f90e988c10828d674c9f50`:
 https://github.com/iibobo/diagram-source-navigator/actions/runs/44895517892
-Results are pending; do not treat the configured matrix as passed.
+This run completed successfully: macOS tests and all seven compatibility jobs passed.
+
+Additional local validation: `./gradlew --offline check buildPlugin pluginChecksum`
+passed on 2026-11-21. Eight PSI tests have zero failures/errors/skips; HTTP checks
+remain 325. This proves cached offline build operation, not network-isolated runtime.
+Latest macOS-only CI: https://github.com/iibobo/diagram-source-navigator/actions/runs/44896157203
+
+## Offline core evidence
+
+`python3 scripts/verify_offline_macos.py` passed with a macOS process sandbox:
+loopback connections succeeded, two external IP connections were rejected with
+EPERM, and all 8 PSI and 325 HTTP checks passed under the inherited restriction.
+Java uses IPv4 sockets for compatibility with the sandbox's loopback rule.
+Reports: `build/reports/offline/network-policy.log` and `gradle.log`.
+
+Chrome cannot start reliably inside the additional macOS sandbox. Browser
+regression instead intercepts requests before network access and denies every
+URL outside the loopback fixture origin. An explicit external-fetch probe fails,
+and all 12 scenarios pass. This is a browser request restriction, separate from
+the operating-system restriction verified for the Java core.
+
+The maintainer deferred rollback on 2026-11-21. No downgrade has been installed;
+0.3.0 remains installed. Rollback stays outstanding and submission remains blocked.
+
+## Artifact correspondence
+
+The signed ZIP remains the exact artifact listed above. Repeated Gradle packaging
+produced unsigned SHA-256 `b529c1767065c1ba4a305e0f8906093be6848f6ce105313d046a42b02b68bffe`.
+The CI unsigned ZIP has SHA-256 `3012222b1af472ac686bcb35d19f76cd1faac4b34dd02e6391fdc3bda42d2326`.
+Every JAR entry, including every class and resource, matches the local signed
+candidate except `META-INF/MANIFEST.MF`, whose build JVM/OS fields describe the
+respective environments. Comparison: `build/reports/ci/candidate-comparison.json`.
+The two Python packages match SHA-256
+`b15b0a08e10d6d816d3eff44e2fe03f46f8776c9fe1397f66061f0fff8c66463`;
+this is a separate build path and is not the uploaded signed ZIP.
+
+Downloaded compatibility reports reside under
+`build/reports/ci/artifacts/plugin-verifier-*/`. All seven verdicts are Compatible.

@@ -45,6 +45,8 @@ jobs:
       - name: Real browser bridge tests
         if: ${{ !cancelled() }}
         run: node tests/browser/navigation.test.mjs
+      - name: Offline core PSI and HTTP verification
+        run: python scripts/verify_offline_macos.py
       - name: Package and verify archive
         run: |
           ./gradlew --no-daemon --console=plain buildPlugin pluginChecksum
