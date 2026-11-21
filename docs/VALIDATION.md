@@ -18,12 +18,12 @@ and project Gradle wrapper 9.2.1. The default terminal also has OpenJDK 25.0.2.
 | Archive contents | Passed | Both unsigned and signed candidates pass `scripts/check_distribution.py` |
 | Author signing | Passed | RSA-4096 self-signed certificate; `signPlugin`, `verifyPluginSignature`, and `signedPluginChecksum` succeeded |
 | Binary compatibility | In progress | Local Verifier resolved the current SDK but stalled downloading a transitive plugin; CI must verify the complete release matrix |
-| macOS/Windows CI | Pending | Workflow must execute on the candidate commit; preserve actual run URLs and reports |
+| macOS CI | Pending | Workflow must execute on the candidate commit; preserve actual run URLs and reports |
 | Representative IDEA acceptance | Partially passed on macOS | Signed 0.3.0 installed and enabled after restart; synthetic project audit and individual editor checks passed (details below); rollback and indexing-wait acceptance remain pending |
 | Marketplace submission | Pending | Account has reached the upload form with vendor `iibobo`; upload only after technical gates pass |
 
-The operating-system acceptance scope is macOS and Windows only. Linux is not
-a required release gate.
+The current release acceptance scope is macOS only, per the maintainer’s
+2026-11-21 decision. Windows and Linux are deferred and are not release gates.
 
 ## Compatibility matrix
 
