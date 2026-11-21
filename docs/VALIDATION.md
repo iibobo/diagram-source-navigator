@@ -48,9 +48,9 @@ stalled during dependency download; passing CI reports provide the evidence.
 - Unsigned ZIP: `build/distributions/diagram-source-navigator-0.3.0.zip`
 - Unsigned SHA-256: `b529c1767065c1ba4a305e0f8906093be6848f6ce105313d046a42b02b68bffe`
 - Signed ZIP: `build/distributions/diagram-source-navigator-0.3.0-signed.zip`
-- Signed SHA-256: `57563adb83acf3cd7ca09b673fe7f2b2029135dd65fc8faaa2eecb7797143bb8`
-- Public certificate: `docs/release-signing.crt`; expires 2027-11-21.
-- Certificate SHA-256: `CE:6F:3E:B2:60:06:6F:BA:D7:10:1C:2A:CB:82:A4:AB:30:B2:CD:8A:22:77:C4:E2:91:52:82:38:99:FD:1F:AF`.
+- Signed SHA-256: `38f856037f2d05647b17634bccf1aa4fb1e73e6e798dc70896eb9fcec867c21c`
+- Public certificate: `docs/release-signing.crt`; expires 2037-11-21.
+- Certificate SHA-256: `8D:8D:CB:4D:2E:8F:14:CB:A8:06:D4:21:30:65:4F:78:6B:A9:9D:CF:12:F3:BA:4B:CC:AF:3F:6F:06:02:29:B2`.
 
 The private key is outside Git with directory mode 0700 and file mode 0600.
 Only the public certificate is tracked. Signed and unsigned ZIPs differ.
@@ -98,3 +98,12 @@ Audit: `build/reports/manual/idea-navigation-audit.json`. Reports contain local
 paths and are ignored by Git. Selected HTML remains trusted executable content.
 No downgrade or rollback test has been performed following the maintainer's
 request to defer it. No Marketplace upload or review approval is claimed.
+
+## Certificate renewal — 2026-11-21
+
+At the maintainer’s request, a replacement self-signed certificate using the
+existing private key now expires 2037-11-21 11:32:40 UTC. The candidate was signed
+again and independently verified with Marketplace ZIP Signer 0.1.45. Its JAR is
+identical to the unsigned package; prior PSI/browser/compatibility evidence
+applies to the unchanged plugin payload. The installed copy and earlier evidence
+archive used the old certificate; no reinstall or Marketplace upload is claimed.
