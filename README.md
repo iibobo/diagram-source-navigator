@@ -6,6 +6,10 @@ Maintained by **iibobo** · [源码与问题反馈](https://github.com/iibobo/di
 
 从本地 Mermaid 类图点击 Java 类或方法，在 IntelliJ IDEA 中定位项目源码、依赖 JAR 的关联源码或反编译视图。插件是独立项目，不依赖 Spring AI、原仓库的技能目录、源文件副本或 Maven reactor。
 
+## 时序图兼容
+
+新版浏览器 bridge 同时支持时序图生成器的 `data-source-symbol` / `data-source-method` 链接：从页面 `source-map` 的已校验符号与精确方法签名解析目标，不直接信任元素上的 JSON 目标。顶部和底部参与者、链式方法均可独立定位；“检查全部跳转”也会遍历这些入口。更新插件后通过原 Tools 菜单打开时序图 HTML。普通 localhost 预览只显示使用提示；构建与浏览器模拟测试不代表当前 IDEA 已真实打开每个符号。
+
 ## 使用步骤
 
 以下截图按提供的 1 → 4 顺序展示。
@@ -104,7 +108,7 @@ Gradle 首次需要联网获取构建插件和测试框架。`check` 包括真�
 
 ```html
 <script id="source-map" type="application/json">
-{"Worker":{"className":"com.example.Worker"}}
+    {"Worker":{"className":"com.example.Worker"}}
 </script>
 ```
 

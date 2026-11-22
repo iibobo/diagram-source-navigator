@@ -38,14 +38,14 @@
   const normalize = value => (value.trim().match(/^[+\-#~]?\s*([\w$]+\([^)]*\))/)?.[1] || value.trim()).replace(/\s/g, '');
   const style = document.createElement('style');
   style.textContent = '.navigator-clickable{cursor:pointer}.navigator-clickable:hover{text-decoration:underline}' +
-    '#navigator-notice{position:fixed;bottom:14px;left:14px;z-index:2147483647;background:white;color:#292735;' +
-    'border:1px solid #8055ba;border-radius:6px;padding:10px 14px;max-width:min(700px,85vw);font:13px Arial,sans-serif;' +
-    'box-shadow:0 3px 18px #0002;max-height:45vh;overflow:auto}' +
-    '#navigator-notice.navigator-success{border-color:#16a34a;overflow-wrap:anywhere}' +
-    '#navigator-notice .navigator-success-icon{display:inline-flex;align-items:center;justify-content:center;' +
-    'width:16px;height:16px;border:1.5px solid #16a34a;border-radius:50%;color:#16a34a;' +
-    'font-weight:bold;line-height:1;margin-right:7px;vertical-align:middle;background:#f0fdf4}' +
-    '#navigator-notice button{display:block;margin:5px 0;padding:5px 8px;max-width:100%;overflow-wrap:anywhere;text-align:left}';
+      '#navigator-notice{position:fixed;bottom:14px;left:14px;z-index:2147483647;background:white;color:#292735;' +
+      'border:1px solid #8055ba;border-radius:6px;padding:10px 14px;max-width:min(700px,85vw);font:13px Arial,sans-serif;' +
+      'box-shadow:0 3px 18px #0002;max-height:45vh;overflow:auto}' +
+      '#navigator-notice.navigator-success{border-color:#16a34a;overflow-wrap:anywhere}' +
+      '#navigator-notice .navigator-success-icon{display:inline-flex;align-items:center;justify-content:center;' +
+      'width:16px;height:16px;border:1.5px solid #16a34a;border-radius:50%;color:#16a34a;' +
+      'font-weight:bold;line-height:1;margin-right:7px;vertical-align:middle;background:#f0fdf4}' +
+      '#navigator-notice button{display:block;margin:5px 0;padding:5px 8px;max-width:100%;overflow-wrap:anywhere;text-align:left}';
   document.head.append(style);
   const notice = document.createElement('aside');
   notice.id = 'navigator-notice'; notice.setAttribute('aria-live', 'polite');
@@ -152,6 +152,17 @@
     finally { busy = false; }
   }
   function targetOf(element) {
+    const symbolic = element?.closest?.('[data-source-symbol]');
+    if (symbolic) {
+      const entry = sourceMap[symbolic.dataset.sourceSymbol];
+      if (!entry?.className) return null;
+      const methodKey = symbolic.dataset.sourceMethod;
+      if (methodKey !== undefined) {
+        const method = entry.methods[methodKey];
+        return method ? {className: method.className || entry.className, methodName: method.methodName, parameterTypes: method.parameterTypes} : null;
+      }
+      return {className: entry.className};
+    }
     const text = element?.closest?.('text');
     const node = text?.closest('g.node');
     const match = node?.id.match(/(?:^|-)classId-(.+)-\d+$/);
@@ -217,12 +228,12 @@
         const label = tabs.length ? tabs[index].textContent : '类图 ' + (index + 1);
         const svg = tabs.length ? document.querySelector('#canvas svg') : diagrams[index];
         if (!svg || (!current && svg === previous)) throw new Error('类图渲染超时：' + label);
-        for (const text of svg.querySelectorAll('g.node text')) {
+        for (const text of svg.querySelectorAll('g.node text, [data-source-symbol]')) {
           if (pageClosed) throw new Error('页面会话已关闭');
           const target = targetOf(text);
           const isMethod = text.closest('.methods-group');
           const nodeName = text.closest('g.node')?.id.match(/(?:^|-)classId-(.+)-\d+$/)?.[1];
-          if (!isMethod && text.textContent.trim() !== nodeName) continue;
+          if (!text.hasAttribute('data-source-symbol') && !isMethod && text.textContent.trim() !== nodeName) continue;
           message('正在验证第 ' + (index + 1) + ' 张图：' + text.textContent + '（已完成 ' + results.length + ' 项）', true);
           const result = target ? await requestNavigation(target) : {status: 'unmapped'};
           results.push({diagram: label, label: text.textContent, request: target, result});

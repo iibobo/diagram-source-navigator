@@ -9,8 +9,8 @@ import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const executable = process.env.CHROME_BIN || (process.platform === 'darwin'
-  ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-  : process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : 'google-chrome');
+    ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+    : process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : 'google-chrome');
 const bridge = await readFile(fileURLToPath(new URL('../../src/main/resources/navigator-bridge.js', import.meta.url)), 'utf8');
 const temporary = await mkdtemp(join(tmpdir(), 'navigator-browser-'));
 const connections = new Set();
@@ -28,7 +28,7 @@ const fixture = sourceMap => {
   return `<!doctype html><html><head><meta charset="utf-8"></head><body>
     <div class="controls"></div><script id="source-map" type="application/json">${sourceMap}</script>
     ${scenario.tabs ? `<div id="tabs"><button role="tab" aria-selected="false">First</button><button role="tab" aria-selected="true">Second</button></div>` : ''}
-    <div id="canvas">${svg}</div>
+    <div id="canvas">${svg}<svg><text x="10" y="20"><a id="sequence-method" data-source-symbol="Valid" data-source-method="+call(...)">call</a></text><text><a id="sequence-invalid" data-source-symbol="Missing">bad</a></text></svg></div>
     ${scenario.tabs ? `<script>document.querySelectorAll('[role="tab"]').forEach(tab => tab.onclick = () => {
       document.querySelectorAll('[role="tab"]').forEach(other => other.setAttribute('aria-selected', String(other === tab)));
       document.querySelector('#canvas').innerHTML = ${JSON.stringify(svg)};
@@ -36,8 +36,8 @@ const fixture = sourceMap => {
     <script src="/navigator-bridge.js" defer></script></body></html>`;
 };
 const validMap = {Valid: {className: 'demo.Valid', methods: {
-  '+call(...)': {methodName: 'call', parameterTypes: ['java.lang.String']}
-}}, Second: {className: 'demo.Second'}};
+      '+call(...)': {methodName: 'call', parameterTypes: ['java.lang.String']}
+    }}, Second: {className: 'demo.Second'}};
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(predicate, description, timeout = 15000) {
   const deadline = Date.now() + timeout;
@@ -77,7 +77,7 @@ try {
           if (scenario.mode === 'body-stall') { response.writeHead(200, {'Content-Type': 'application/json'}); response.flushHeaders(); return; }
           if (scenario.mode === 'ambiguous' && scenario.requests.length === 1) {
             json(response, {status: 'ambiguous', candidates: [{label: 'demo.Valid#call(java.lang.String)',
-              target: {className: 'demo.Valid', methodName: 'call', parameterTypes: ['java.lang.String'], fileUrl: 'jar://dependency!/demo/Valid.class'}}]}); return;
+                target: {className: 'demo.Valid', methodName: 'call', parameterTypes: ['java.lang.String'], fileUrl: 'jar://dependency!/demo/Valid.class'}}]}); return;
           }
           json(response, {status: scenario.mode === 'pending' ? 'pending' : scenario.mode === 'closed' ? 'closed' : 'opened'}); return;
         }
@@ -89,9 +89,9 @@ try {
   await new Promise((resolve, reject) => { http.once('error', reject); http.listen(0, '127.0.0.1', resolve); });
   const origin = 'http://127.0.0.1:' + http.address().port;
   chrome = spawn(executable, ['--headless=new', '--no-first-run', '--no-default-browser-check',
-    '--disable-background-networking', '--disable-component-update', '--disable-sync', '--metrics-recording-only',
-    '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--password-store=basic', '--user-data-dir=' + join(temporary, 'profile'), '--remote-debugging-pipe', 'about:blank'],
-    {stdio: ['ignore', 'ignore', 'pipe', 'pipe', 'pipe']});
+        '--disable-background-networking', '--disable-component-update', '--disable-sync', '--metrics-recording-only',
+        '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--password-store=basic', '--user-data-dir=' + join(temporary, 'profile'), '--remote-debugging-pipe', 'about:blank'],
+      {stdio: ['ignore', 'ignore', 'pipe', 'pipe', 'pipe']});
   let serial = 0, buffer = '', diagnostics = '';
   const pending = new Map(), errors = new Map();
   chrome.stderr.on('data', data => { diagnostics = (diagnostics + data).slice(-3000); });
@@ -110,8 +110,8 @@ try {
         const local = new URL(request.url).origin === origin;
         if (!local) blockedExternalRequests.add(request.url);
         void cdp(local ? 'Fetch.continueRequest' : 'Fetch.failRequest',
-          local ? {requestId} : {requestId, errorReason: 'InternetDisconnected'}, message.sessionId)
-          .catch(() => {}); // Closing a test target also cancels its paused requests.
+            local ? {requestId} : {requestId, errorReason: 'InternetDisconnected'}, message.sessionId)
+            .catch(() => {}); // Closing a test target also cancels its paused requests.
       } else if (message.method === 'Runtime.exceptionThrown') {
         const list = errors.get(message.sessionId);
         list?.push(message.params.exceptionDetails.text + ': ' + message.params.exceptionDetails.exception?.description);
@@ -180,6 +180,15 @@ try {
     assert.deepEqual(scenario.requests[1], {className: 'demo.Valid', methodName: 'call', parameterTypes: ['java.lang.String']});
     assert.deepEqual(errors.get(page.session), []);
   });
+  await check('sequence links use validated symbol keys and exact method signatures', async () => {
+    const page = await open();
+    await page.click('#sequence-method');
+    await until(() => scenario.requests.length === 1, 'sequence method navigation');
+    await until(async () => (await page.text()).includes('已在 IDEA 打开'), 'sequence completion');
+    assert.deepEqual(scenario.requests[0], {className: 'demo.Valid', methodName: 'call', parameterTypes: ['java.lang.String']});
+    await page.click('#sequence-invalid');
+    assert.equal(scenario.requests.length, 1);
+  });
   await check('malformed JSON is reported while server mappings remain usable', async () => {
     const page = await open({map: '{broken'});
     assert.match(await page.text(), /映射.*无效/);
@@ -190,7 +199,7 @@ try {
   });
   await check('invalid mapping entries and methods are isolated', async () => {
     const page = await open({map: JSON.stringify({...validMap, Broken: null, InvalidClass: {className: 42},
-      Valid: {...validMap.Valid, methods: {...validMap.Valid.methods, '+bad()': null}}}), symbols: {Second: 'demo.Second', Invalid: null}});
+        Valid: {...validMap.Valid, methods: {...validMap.Valid.methods, '+bad()': null}}}), symbols: {Second: 'demo.Second', Invalid: null}});
     assert.match(await page.text(), /4 项无效/);
     await page.click('#method-valid');
     await until(() => scenario.requests.length === 1, 'valid neighboring method');
