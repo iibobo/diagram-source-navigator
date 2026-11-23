@@ -27,6 +27,7 @@
     也可使用其他提供兼容源码映射的可信 HTML 类图。</p>
   ]]></description>
   <change-notes><![CDATA[
+    <p>0.3.2: updated README source-navigation guides for class, sequence, and flowchart diagrams.</p>
     <p>0.3.1: multiple diagrams and flowchart source navigation.</p>
     <ul>
       <li>Open multiple diagram files in the diagram tool window.</li>

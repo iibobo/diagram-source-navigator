@@ -1,5 +1,42 @@
 # Release validation — 0.3.0
 
+## Upload package — 0.3.2, 2026-11-23
+
+Updated `pluginVersion` to 0.3.2 and added release notes for the README diagram
+guides. Gradle `buildPlugin pluginChecksum signedPluginChecksum` passed using
+JDK 25 and the existing author signing key. Signature verification and both
+distribution checks passed. The packaged descriptor contains version 0.3.2 and
+the stable plugin ID. Signed and unsigned plugin payloads match.
+
+- Upload ZIP: `build/distributions/diagram-source-navigator-0.3.2-signed.zip`.
+  SHA-256: `e6e537aae8ab9a11bede909f56b94e0c00dd3ef5e0aeff6f96f5a5c0fdbc8973`.
+- Unsigned ZIP SHA-256:
+  `1db789f080e3c109936b9751e20af6c5c7dd55f9fb22ea1abecf67b13d59d62a`.
+- Build log: `build/reports/release-0.3.2/build.log`.
+
+Tests and Plugin Verifier were not rerun for this version/notes update.
+Marketplace upload and the outstanding release acceptance checks remain pending.
+
+## Repackaged upload candidate — 0.3.1, 2026-11-23
+
+Rebuilt source `9e3f59e` after the README/media cleanup using JDK 25 and the
+existing author signing key. Gradle `buildPlugin pluginChecksum signedPluginChecksum`
+was run with `--rerun-tasks`; packaging, signing, and signature verification passed.
+Both distribution checks passed, and signed/unsigned plugin payloads match.
+Compared with the candidate below, only `META-INF/MANIFEST.MF` changed inside
+the plugin JAR. Its classes, descriptor, and browser resources are identical,
+so the earlier local tests and IDEA 2026.2.3 compatibility verdict apply to
+those unchanged entries. Tests and Plugin Verifier were not rerun for this repack.
+
+- Upload ZIP: `build/distributions/diagram-source-navigator-0.3.1-signed.zip`.
+  SHA-256: `e10a65fb11504b1e96c8a0eaf73ee78b9798dd68a3c9af0a225a94cc6807ddc8`.
+- Unsigned ZIP SHA-256:
+  `014fae23eca9040c1d7d29a556a75a43cd161f87dc8b64631707233a244aa599`.
+- Build log: `build/reports/release-0.3.1/repackage.log`.
+
+These archive identities supersede the candidate hashes below. This ZIP has
+not been uploaded to Marketplace. The outstanding release checks below remain open.
+
 ## Upload candidate — 0.3.1, 2026-11-23
 
 Built from `48b11804e1009c3fb6779db6e2a7dd06282840bd` with the working-tree

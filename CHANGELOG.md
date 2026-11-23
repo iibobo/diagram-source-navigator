@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+- Update README source-navigation guides for class, sequence, and flowchart diagrams.
+
 ## 0.3.1
 
 - Open multiple diagram files in the diagram tool window.
