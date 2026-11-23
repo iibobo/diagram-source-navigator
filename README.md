@@ -18,9 +18,17 @@ Maintained by **iibobo** · [源码与问题反馈](https://github.com/iibobo/di
 
 ## 源码跳转演示
 
-**IDEA 插件 Diagram Source Navigator**
+**类图源码跳转**
 
-<img src="docs/media/diagram-source-navigator.jpg" alt="JetBrains Marketplace 中的 Diagram Source Navigator 插件" width="640">
+<img src="docs/media/marketplace/class-diagram-guided.png" alt="从类图中的方法跳转到 IDEA 源码的操作指引" width="640">
+
+**时序图源码跳转**
+
+<img src="docs/media/marketplace/sequences-guided.png" alt="从时序图中的方法调用跳转到 IDEA 源码的操作指引" width="640">
+
+**流程图源码跳转**
+
+<img src="docs/media/marketplace/flowcharts-guided.png" alt="从流程图节点跳转到 IDEA 源码的操作指引" width="640">
 
 **打开类图，点击类名或方法跳转到 IDEA 源码**
 
