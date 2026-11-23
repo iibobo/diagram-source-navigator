@@ -3,7 +3,16 @@ package dev.learning.navigator;
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
 import com.intellij.testFramework.PlatformTestUtil;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.util.io.FileUtil;
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.ConnectException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 
@@ -98,6 +107,64 @@ public final class NavigatorPsiTest extends LightJavaCodeInsightFixtureTestCase 
     } finally {
       service.dispose();
     }
+  }
+
+  public void testMultipleDiagramsKeepIndependentSessionsUntilReplaced() throws Exception {
+    Path root = Files.createTempDirectory("navigator-batch");
+    var service = new NavigatorService(getProject());
+    try (var client = HttpClient.newHttpClient()) {
+      Path first = writeDiagram(root.resolve("first"), "demo.First");
+      Path second = writeDiagram(root.resolve("second"), "demo.Second");
+      var batch = service.open(List.of(first, second));
+      assertSize(2, batch);
+      assertTrue(service.isCurrent(batch));
+      assertTrue(symbolMap(client, batch.getFirst(), batch.getFirst()).body().contains("demo.First"));
+      assertTrue(symbolMap(client, batch.getLast(), batch.getLast()).body().contains("demo.Second"));
+      assertEquals(403, symbolMap(client, batch.getLast(), batch.getFirst()).statusCode());
+
+      assertThrows(IOException.class, () -> service.open(List.of(first, root.resolve("missing.html"))));
+      assertTrue(service.isCurrent(batch));
+      assertEquals(200, symbolMap(client, batch.getFirst(), batch.getFirst()).statusCode());
+      assertEquals(200, symbolMap(client, batch.getLast(), batch.getLast()).statusCode());
+
+      var replacement = service.open(List.of(first));
+      assertTrue(service.isCurrent(replacement));
+      assertFalse(service.isCurrent(batch));
+      for (String url : batch) {
+        assertThrows(ConnectException.class, () -> symbolMap(client, url, url));
+      }
+      service.dispose();
+      assertFalse(service.isCurrent(replacement));
+      assertThrows(ConnectException.class, () -> symbolMap(client, replacement.getFirst(), replacement.getFirst()));
+    } finally {
+      service.dispose();
+      FileUtil.deleteRecursively(root);
+    }
+  }
+
+  public void testDiagramChooserSupportsMultipleFilesAndNativeHtmlFiltering() {
+    var descriptor = OpenDiagramAction.diagramChooserDescriptor();
+    assertTrue(descriptor.isChooseMultiple());
+    assertFalse(descriptor.isChooseFolders());
+    var extensionFilter = descriptor.getExtensionFilter();
+    assertNotNull("The native chooser needs an extension filter to disable non-HTML files", extensionFilter);
+    assertEquals(List.of("html"), extensionFilter.getSecond());
+  }
+
+  private static Path writeDiagram(Path directory, String className) throws IOException {
+    Files.createDirectory(directory);
+    return Files.writeString(directory.resolve("diagram.html"), """
+        <html><head><script id="source-map" type="application/json">
+        {"Target":{"className":"%s"}}
+        </script></head></html>
+        """.formatted(className));
+  }
+
+  private static HttpResponse<String> symbolMap(HttpClient client, String url, String tokenUrl) throws Exception {
+    String bearer = URI.create(tokenUrl).getFragment().substring("navigator-token=".length());
+    var request = HttpRequest.newBuilder(URI.create(url).resolve("/api/symbol-map"))
+        .timeout(Duration.ofSeconds(5)).header("Authorization", "Bearer " + bearer).build();
+    return client.send(request, HttpResponse.BodyHandlers.ofString());
   }
 
   private static void navigate(NavigatorService service, NavigationRequest request, NavigationTask task) throws Exception {

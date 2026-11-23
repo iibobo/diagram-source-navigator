@@ -22,7 +22,10 @@ Maintained by **iibobo** · [源码与问题反馈](https://github.com/iibobo/di
 
 ### 2. 在 IDEA 中打开 HTML 类图
 
-通过 Tools → Open Class Diagram with Source Navigation… 选择 HTML 文件。
+点击 IDEA 左下角的 **Diagram Source Navigator** 图标，再点 **Open HTML Diagrams…**。
+也可通过 **Tools → Open Class Diagram with Source Navigation…** 打开同一选择框。
+按住 Shift 选择一段连续的 HTML 文件，或用 macOS 的 Command（Windows/Linux 的 Ctrl）逐个多选。
+确认后，选中的图会分别在浏览器中打开。
 
 ![2. 在 IDEA 中打开 HTML 类图](docs/media/02-open-diagram.png)
 
@@ -93,12 +96,12 @@ Gradle 首次需要联网获取构建插件和测试框架。`check` 包括真�
 
 1. IDEA → Settings → Plugins → 齿轮 → Install Plugin from Disk，选择上述 ZIP。按 IDEA 提示重启。
 2. 打开需要查源码的 Java 项目，完成 Maven/Gradle 同步。
-3. Tools → **Open Class Diagram with Source Navigation…**，选择 HTML 类图。可先选择 `examples/diagram.html`。
-4. 插件在浏览器打开本地页面。点击类名或方法名；出现多个声明时，在页面左下角选择完整签名/依赖位置。类名和方法也支持 Tab 后按 Enter。
+3. 打开左下角的 **Diagram Source Navigator** 工具窗口，点击 **Open HTML Diagrams…**，或使用 **Tools → Open Class Diagram with Source Navigation…**。可先选择 `examples/diagram.html`，也可用 Cmd（Windows/Linux 用 Ctrl）或 Shift 多选。
+4. 每个选中的 HTML 都会在浏览器中单独打开，同一批页面可同时跳转到 IDEA 源码。点击类名或方法名，或按 Tab 选中后按 Enter。出现多个声明时，在页面左下角选择完整签名和依赖位置。
 
-现有 Spring AI 类图可以直接选择，无需修改其文件。插件仅对通过此菜单打开的页面启用导航；直接双击原 HTML 仍保留其原有行为。
+可以直接通过插件打开现有 Spring AI 类图。通过 Tools 菜单或工具窗口打开的页面都会启用源码导航。
 
-重新选择类图会停止旧服务、轮换令牌并使旧页面失效；刷新丢失内存令牌后，请从 Tools 菜单重新打开。关闭项目或卸载插件时释放服务。
+成功打开新一批 HTML 后，上一批页面的导航会话随即失效。刷新页面导致配对令牌丢失时，可从插件入口重新打开。关闭项目或卸载插件时会释放当前批次的所有会话。
 
 ## 图形与源码映射
 
@@ -118,7 +121,7 @@ Gradle 首次需要联网获取构建插件和测试框架。`check` 包括真�
 
 ## 实现
 
-- `OpenDiagramAction`：选择 HTML，取得当前项目的服务并打开浏览器。
+- `OpenDiagramAction` 和 `DiagramToolWindowFactory`：提供 Tools 菜单和左下角工具窗口入口，共用 HTML 多选和浏览器打开流程。
 - `NavigatorService`：`ReadAction.nonBlocking().inSmartMode()` 在后台解析 PSI，用智能指针把结果传到 UI 线程；`navigationElement` / `Navigatable` 打开声明。重载和同名依赖候选保留真实文件位置。
 - `NavigationServer`：随机回环端口、会话令牌、Host/Origin 校验；只提供所选 HTML 及同目录图形资源，不提供目录列表、Java 下载或任意路径执行。
 - `navigator-bridge.js`：捕获类/方法点击，提交符号，轮询真实导航完成状态，展示候选；拦截旧 `idea://` 链接。
@@ -145,6 +148,7 @@ HTML 启动时读取有界快照（最多 32 MiB），映射与页面保持一�
 配置了 macOS 测试及 Plugin Verifier；实际通过状态以 CI 报告为准。
 安装后还需检查：
 
+- 在 IDEA 新界面的默认布局中确认左下角显示 Diagram Source Navigator 图标。分别通过工具窗口和 Tools 菜单按住 Shift 选择两个 HTML 文件，确认两个页面都能跳转到源码。将一个非 HTML 文件放在两者之间，确认它不会随范围一起打开。
 - 示例中的 `List`、`size()`、`get(int)` 能打开 JDK 声明。
 - 当前项目类和依赖 JAR 类均可打开；有/无源码附件分别检查。
 - 简化重载签名展示候选，选择后定位；继承方法跳到父类型声明。

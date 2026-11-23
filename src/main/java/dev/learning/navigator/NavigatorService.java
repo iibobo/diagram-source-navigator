@@ -9,23 +9,37 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.pom.Navigatable;
 import com.intellij.util.concurrency.AppExecutorUtil;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
 public final class NavigatorService implements Disposable {
   private final Project project;
-  private NavigationServer server;
+  private volatile List<NavigationServer> servers = List.of();
   private boolean disposed;
   public NavigatorService(Project project) { this.project = project; }
 
-  public synchronized String open(Path html) throws Exception {
+  public synchronized List<String> open(List<Path> htmlFiles) throws IOException {
     if (disposed || project.isDisposed()) throw new IllegalStateException("项目已关闭");
-    if (server != null) server.close();
-    server = new NavigationServer(html, this::navigate);
-    return server.url();
+    if (htmlFiles.isEmpty()) return List.of();
+    var next = new ArrayList<NavigationServer>();
+    for (Path html : htmlFiles) {
+      try {
+        next.add(new NavigationServer(html, this::navigate));
+      } catch (IOException | RuntimeException ex) {
+        next.forEach(NavigationServer::close);
+        throw new IOException(html.getFileName() + "：" + ex.getMessage(), ex);
+      }
+    }
+    var previous = servers;
+    servers = List.copyOf(next);
+    previous.forEach(NavigationServer::close);
+    return next.stream().map(NavigationServer::url).toList();
   }
 
-  synchronized boolean isCurrent(String url) { return !disposed && server != null && server.url().equals(url); }
+  boolean isCurrent(List<String> urls) {
+    return !urls.isEmpty() && urls.equals(servers.stream().map(NavigationServer::url).toList());
+  }
 
   private record Choice(NavigationRequest request, String label, SmartPsiElementPointer<PsiElement> pointer) {}
 
@@ -104,6 +118,8 @@ public final class NavigatorService implements Disposable {
   }
   @Override public synchronized void dispose() {
     disposed = true;
-    if (server != null) server.close();
+    var previous = servers;
+    servers = List.of();
+    previous.forEach(NavigationServer::close);
   }
 }
