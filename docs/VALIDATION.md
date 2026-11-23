@@ -1,5 +1,34 @@
 # Release validation — 0.3.0
 
+## Upload candidate — 0.3.1, 2026-11-23
+
+Built from `48b11804e1009c3fb6779db6e2a7dd06282840bd` with the working-tree
+version set to 0.3.1 and updated descriptor/change log notes for multiple diagrams
+and flowchart source navigation. This section records the new candidate; the
+0.3.0 evidence below describes the earlier release.
+
+- Gradle `check buildPlugin pluginChecksum` passed with JDK 25.0.2: 13 PSI
+  tests, zero failures/errors/skips, and 339 HTTP/navigation-contract checks.
+- All 15 real-Chrome browser scenarios passed.
+- macOS offline verification passed with the installed IDEA SDK.
+- Plugin Verifier 1.411 passed against IDEA 2026.2.3 (`IU-262.10968.63`),
+  verdict `Compatible`. It was rerun successfully after the change notes update.
+  The other six CI compatibility targets have not been rerun for this candidate.
+- Both distribution checks passed. Signing with the existing RSA-4096 key and
+  2037-expiry certificate, signature verification, and signed checksum generation
+  passed. Signed and unsigned ZIPs contain identical plugin payloads.
+- Unsigned ZIP: `build/distributions/diagram-source-navigator-0.3.1.zip`.
+  SHA-256: `da9bb78e60285de4774a6b4b5d57c5ac061228149bd981157a3c428e7d4d8794`.
+- Upload ZIP: `build/distributions/diagram-source-navigator-0.3.1-signed.zip`.
+  SHA-256: `5ddbe838dc83874c35a30d41a7dd958a9117418426f096f027315bebaa312825`.
+- Reports are under `build/reports/pluginVerifier/`, `build/reports/tests/`, and
+  `build/reports/offline/`. Final build/verifier logs are retained under
+  `build/reports/release-0.3.1/`.
+
+Fresh CI run URLs, manual IDEA acceptance for 0.3.1, and rollback acceptance
+remain outstanding. Marketplace submission and approval for this ZIP have not
+been performed.
+
 ## Scope and decision
 
 As agreed on 2026-11-21, current platform acceptance covers **macOS only**.

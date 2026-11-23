@@ -27,6 +27,11 @@
     也可使用其他提供兼容源码映射的可信 HTML 类图。</p>
   ]]></description>
   <change-notes><![CDATA[
+    <p>0.3.1: multiple diagrams and flowchart source navigation.</p>
+    <ul>
+      <li>Open multiple diagram files in the diagram tool window.</li>
+      <li>Navigate from flowchart shapes to source locations and preserve line information when selecting a candidate.</li>
+    </ul>
     <p>0.3.0: production-hardening release preparation.</p>
     <ul>
       <li>Harden navigation request validation, cancellation, and local resource boundaries.</li>

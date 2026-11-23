@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1
+
+- Open multiple diagram files in the diagram tool window.
+- Navigate from flowchart shapes to source locations and preserve line information when selecting a candidate.
+
 ## 0.3.0 — release candidate
 
 - Validate navigation inputs and harden bounded local HTTP resources, request deadlines, and cancellation.
