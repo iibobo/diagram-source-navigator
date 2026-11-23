@@ -1,10 +1,10 @@
 # Diagram Source Navigator
 
-Navigate from local Mermaid class diagrams to Java declarations in IntelliJ IDEA.
+Navigate from local Mermaid diagrams to Java declarations and source lines in IntelliJ IDEA.
 Maintained by **iibobo** · [源码与问题反馈](https://github.com/iibobo/diagram-source-navigator)
 · **iibobo@zohomail.cn** · [Apache-2.0](LICENSE).
 
-从本地 Mermaid 类图点击 Java 类或方法，在 IntelliJ IDEA 中定位项目源码、依赖 JAR 的关联源码或反编译视图。插件是独立项目，不依赖 Spring AI、原仓库的技能目录、源文件副本或 Maven reactor。
+从本地 Mermaid 图表在 IntelliJ IDEA 中定位 Java 类、方法或指定源码行。插件可以打开项目源码、依赖 JAR 的关联源码或反编译声明。插件是独立项目，不依赖 Spring AI、原仓库的技能目录、源文件副本或 Maven reactor。
 
 ## 时序图兼容
 
@@ -105,7 +105,7 @@ Gradle 首次需要联网获取构建插件和测试框架。`check` 包括真�
 
 ## 图形与源码映射
 
-支持 Mermaid `classDiagram` 的 `g.node`、类名 `text`、`.methods-group text` 和 `…-classId-Name-N` 节点 ID；不支持任意流程图。插件添加事件代理和悬浮状态提示，不改动节点、方法配色、连线、缩放、导航和全屏控件。
+类图支持 Mermaid `classDiagram` 的 `g.node`、类名 `text`、`.methods-group text` 和 `…-classId-Name-N` 节点 ID。流程图通过 `data-source-symbol` 关联源码。插件添加事件代理和悬浮状态提示。
 
 页面可提供内嵌映射，避免同名类歧义：
 
@@ -118,6 +118,20 @@ Gradle 首次需要联网获取构建插件和测试框架。`check` 包括真�
 兼容旧映射中的相对 `file`：若对应 Java 文件仍存在于类图目录内，会读取 package 和顶层类型推导完整类名及嵌套接口名；生成器哈希文件名也可使用。没有完整类名映射的节点不启用导航；插件只按全限定类名查询 IDEA 索引。**实际导航始终基于当前项目及其依赖索引**，不打开映射中的源码副本。
 
 方法标签如 `+call(String)` 按名称和擦除后的参数类型匹配；完整参数类型最准确。图中的简化签名通过 `methods` 映射补充真实的 `methodName` 和擦除后的 `parameterTypes`；显式参数不匹配时报告未找到，不回退到其他重载。继承方法定位到真实声明。未找到、索引等待、候选歧义和任务超时会分别提示。未导入的 JAR 不在搜索范围内；源码附件需由 IDEA/Maven/Gradle 关联。
+
+### 流程图节点跳到源码行
+
+用 iibobo 的 `render-flowcharts` 技能生成 HTML，在 Mermaid 图块里加入节点映射。
+
+```mermaid
+flowchart TB
+    %% source-map: {"Check":{"className":"com.example.Worker","line":42}}
+    Check{"数据有效？"} --> Done(["完成"])
+```
+
+查看器为节点生成 `data-source-symbol`，并在 `source-map` 中写入对应的 `className` 和 `line`。从 IDEA 的 **Diagram Source Navigator → Open HTML Diagrams…** 打开 HTML，点击节点或按 Tab 选中后按 Enter。行号从整个 Java 文件的第一行起算。同名类可按候选路径选择。依赖类要关联源码。缺少源码或行号越界时，页面会提示原因。
+
+设定 `FLOWCHART_RENDERER` 为技能的 `scripts/render_diagrams.py` 路径后运行 `node tests/browser/navigation.test.mjs`，可用 Chrome 验证生成后的 HTML 点击、切图、键盘和批量定位行为。
 
 ## 实现
 
@@ -132,6 +146,7 @@ Gradle 首次需要联网获取构建插件和测试框架。`check` 包括真�
 
 接口：`POST /api/navigate` 返回 `202 + requestId`；`GET /api/result/{id}` 返回 pending/opened/ambiguous/not_found 等状态；
 `DELETE /api/result/{id}` 取消任务；`GET /api/symbol-map` 返回会话内缓存的规范类名映射。
+行号请求使用 `{"className":"com.example.Worker","line":42}`。`line` 为从 1 开始的整数，与方法签名字段互斥。精确定位可能返回 `source_unavailable` 或 `line_out_of_range`。
 客户端可通过 `X-Navigator-Request-ID` 提供 UUID，在 POST 响应丢失时仍可取消请求；
 DELETE 对未知 UUID 幂等返回 200，并保留两分钟的有界取消记录，防止迟到 POST 再触发导航。
 HTML 启动时读取有界快照（最多 32 MiB），映射与页面保持一致。最多保留 128 个未领取任务、

@@ -174,7 +174,14 @@ final class NavigationServer implements AutoCloseable {
     if (body.length > MAX_BODY) { json(exchange, 413, Map.of("error", "request_too_large")); return; }
     NavigationRequest request;
     try {
-      request = JSON.fromJson(new String(body, StandardCharsets.UTF_8), NavigationRequest.class);
+      var payload = JSON.fromJson(new String(body, StandardCharsets.UTF_8), JsonObject.class);
+      if (payload == null) throw new IllegalArgumentException();
+      var line = payload.get("line");
+      if (line != null && !line.isJsonNull()) {
+        if (!line.isJsonPrimitive() || !line.getAsJsonPrimitive().isNumber()) throw new IllegalArgumentException();
+        Integer.parseInt(line.getAsString());
+      }
+      request = JSON.fromJson(payload, NavigationRequest.class);
       if (request == null) throw new IllegalArgumentException();
     } catch (RuntimeException ex) { json(exchange, 400, Map.of("error", "invalid_request")); return; }
     String suppliedId = exchange.getRequestHeaders().getFirst("X-Navigator-Request-ID");
@@ -204,6 +211,7 @@ final class NavigationServer implements AutoCloseable {
       for (var entry : entries.entrySet()) {
         try {
           var value = entry.getValue().getAsJsonObject();
+          if (value.has("line") && !value.has("file")) continue;
           if (value.has("className")) { result.put(entry.getKey(), value.get("className").getAsString()); continue; }
           if (!value.has("file")) continue;
           Path source;

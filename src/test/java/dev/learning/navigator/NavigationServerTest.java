@@ -22,7 +22,8 @@ public final class NavigationServerTest {
       Files.writeString(root.resolve("diagram.html"), """
           <html><head></head><body>
           <script id="source-map" type="application/json">
-          {"Worker":{"file":"hashed.java"},"Spec":{"file":"hashed.java"}}
+          {"Worker":{"file":"hashed.java","line":2},"Spec":{"file":"hashed.java","line":2},
+           "Step":{"className":"demo.Worker","line":2}}
           </script></body></html>
           """);
       Files.writeString(root.resolve("hashed.java"), "package demo;\npublic interface Worker { interface Spec {} }");
@@ -51,6 +52,7 @@ public final class NavigationServerTest {
         check(get(origin + "/api/symbol-map", null).statusCode() == 403, "token required");
         var map = get(origin + "/api/symbol-map", token);
         check(map.statusCode() == 200 && map.body().contains("demo.Worker.Spec"), "hashed filename and nested class resolved");
+        check(!JsonParser.parseString(map.body()).getAsJsonObject().has("Step"), "line-only mappings stay in the page bridge");
         var badOrigin = HttpRequest.newBuilder(URI.create(origin + "/api/symbol-map"))
             .header("Authorization", "Bearer " + token).header("Origin", "https://attacker.invalid").GET().build();
         check(CLIENT.send(badOrigin, HttpResponse.BodyHandlers.ofString()).statusCode() == 403, "cross-origin denied");
@@ -64,6 +66,17 @@ public final class NavigationServerTest {
         String id = JsonParser.parseString(accepted.body()).getAsJsonObject().get("requestId").getAsString();
         check(get(origin + "/api/result/" + id, token).body().contains("opened"), "completion reported");
         check(seen.get().parameterTypes().equals(List.of("java.lang.String")), "signature preserved");
+        var lineRequest = post(origin, token, "{\"className\":\"demo.Worker\",\"line\":22}");
+        check(lineRequest.statusCode() == 202, "class and line navigation accepted");
+        String lineId = JsonParser.parseString(lineRequest.body()).getAsJsonObject().get("requestId").getAsString();
+        check(get(origin + "/api/result/" + lineId, token).body().contains("opened"), "line navigation completion reported");
+        check(Integer.valueOf(22).equals(seen.get().line()), "one-based line preserved");
+        for (String invalidLine : List.of("0", "-1", "1.2", "2147483648", "4294967297", "\"22\"", "true", "[]", "{}")) {
+          check(post(origin, token, "{\"className\":\"demo.Worker\",\"line\":" + invalidLine + "}").statusCode() == 400,
+              "invalid line rejected: " + invalidLine);
+        }
+        check(post(origin, token, "{\"className\":\"demo.Worker\",\"line\":22,\"methodName\":\"call\"}").statusCode() == 400,
+            "an absolute source line cannot be combined with a method name");
         check(get(origin + "/api/result/missing", token).statusCode() == 404, "unknown task rejected");
         check(get(origin + "/api/result/" + id, token).statusCode() == 404, "completed task released after delivery");
         for (int n = 0; n < 140; n++) {

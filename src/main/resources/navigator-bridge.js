@@ -20,7 +20,13 @@
       if (!object(entry) || (entry.className !== undefined && !classNameValid(entry.className))) {
         invalidMappings++; continue;
       }
-      const clean = {className: entry.className, methods: Object.create(null)};
+      // Legacy class diagrams use file/line for copied sources, separately from IDEA symbol navigation.
+      const line = Object.hasOwn(entry, 'file') ? undefined : entry.line;
+      if (line !== undefined && (entry.className === undefined || !Number.isInteger(line)
+          || line < 1 || line > 2147483647 || entry.methods !== undefined)) {
+        invalidMappings++; continue;
+      }
+      const clean = {className: entry.className, line, methods: Object.create(null)};
       if (entry.methods !== undefined && !object(entry.methods)) invalidMappings++;
       else for (const [label, method] of Object.entries(entry.methods || {})) {
         if (!object(method) || !methodNameValid(method.methodName) || !Array.isArray(method.parameterTypes)
@@ -161,7 +167,7 @@
         const method = entry.methods[methodKey];
         return method ? {className: method.className || entry.className, methodName: method.methodName, parameterTypes: method.parameterTypes} : null;
       }
-      return {className: entry.className};
+      return entry.line === undefined ? {className: entry.className} : {className: entry.className, line: entry.line};
     }
     const text = element?.closest?.('text');
     const node = text?.closest('g.node');
@@ -169,7 +175,7 @@
     if (!match) return null;
     const name = match[1], entry = sourceMap[name];
     const className = entry?.className || symbols[name];
-    if (!className) return null;
+    if (!className || entry?.line !== undefined) return null;
     if (text.closest('.methods-group')) {
       const label = normalize(text.textContent);
       const mapped = Object.entries(entry?.methods || {}).find(([key]) => normalize(key) === label)?.[1];
@@ -189,11 +195,12 @@
     event.preventDefault(); event.stopImmediatePropagation(); navigate(target);
   }, true);
   function mark() {
-    for (const text of document.querySelectorAll('svg g.node text')) {
-      if (targetOf(text)) {
-        text.classList.add('navigator-clickable');
-        text.setAttribute('tabindex', '0'); text.setAttribute('role', 'link');
-        text.setAttribute('aria-label', text.textContent + '，在 IDEA 定位');
+    for (const element of document.querySelectorAll('svg g.node text, svg [data-source-symbol]')) {
+      const symbolic = element.closest('[data-source-symbol]');
+      if ((!symbolic || symbolic === element) && targetOf(element)) {
+        element.classList.add('navigator-clickable');
+        element.setAttribute('tabindex', '0'); element.setAttribute('role', 'link');
+        element.setAttribute('aria-label', element.textContent + '，在 IDEA 定位');
       }
     }
   }
@@ -204,7 +211,7 @@
   });
   const auditButton = document.createElement('button');
   auditButton.id = 'navigator-audit'; auditButton.textContent = '检查全部跳转';
-  auditButton.title = '逐张渲染类图，在 IDEA 中实际打开每个类和方法，并导出验证记录';
+  auditButton.title = '逐张渲染图表，在 IDEA 中打开源码目标，并导出验证记录';
   document.querySelector('.controls')?.append(auditButton);
   auditButton.onclick = async () => {
     if (busy) return;
@@ -214,7 +221,7 @@
     try {
       if (!await ready) throw new Error('导航服务不可用，请从 IDEA 菜单重新打开');
       const diagrams = tabs.length ? tabs : [...document.querySelectorAll('svg')].filter(svg => svg.querySelector('g.node'));
-      if (!diagrams.length) throw new Error('没有可检查的类图');
+      if (!diagrams.length) throw new Error('没有可检查的图表');
       for (let index = 0; index < diagrams.length; index++) {
         if (pageClosed) throw new Error('页面会话已关闭');
         const previous = document.querySelector('#canvas svg');
@@ -225,9 +232,9 @@
           if (pageClosed) throw new Error('页面会话已关闭');
           await pause(100);
         }
-        const label = tabs.length ? tabs[index].textContent : '类图 ' + (index + 1);
+        const label = tabs.length ? tabs[index].textContent : '图 ' + (index + 1);
         const svg = tabs.length ? document.querySelector('#canvas svg') : diagrams[index];
-        if (!svg || (!current && svg === previous)) throw new Error('类图渲染超时：' + label);
+        if (!svg || (!current && svg === previous)) throw new Error('图表渲染超时：' + label);
         for (const text of svg.querySelectorAll('g.node text, [data-source-symbol]')) {
           if (pageClosed) throw new Error('页面会话已关闭');
           const target = targetOf(text);

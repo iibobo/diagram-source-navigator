@@ -3,6 +3,9 @@ package dev.learning.navigator;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -53,16 +56,33 @@ public final class NavigatorService implements Disposable {
                 Map.of("label", c.label(), "target", c.request())).toList()));
             return;
           }
-          var element = choices.getFirst().pointer().getElement();
+          var choice = choices.getFirst();
+          var element = choice.pointer().getElement();
           if (element == null || !element.isValid()) { done.accept(Map.of("status", "stale")); return; }
           var target = element.getNavigationElement();
+          if (request.line() != null) {
+            done.accept(openLine(target, request.line(), choice.label()));
+            return;
+          }
           if (target instanceof Navigatable n && n.canNavigate()) {
             n.navigate(true);
-            done.accept(Map.of("status", "opened", "target", choices.getFirst().label()));
+            done.accept(Map.of("status", "opened", "target", choice.label()));
           } else done.accept(Map.of("status", "not_navigatable"));
         })).submit(AppExecutorUtil.getAppExecutorService())
         .onError(error -> done.accept(Map.of("status", "error", "message", "源码导航任务已取消或失败")));
     done.onCancel(promise::cancel);
+  }
+
+  private Map<String, Object> openLine(PsiElement target, int line, String label) {
+    var source = target.getContainingFile();
+    var file = source instanceof PsiJavaFile && !(source instanceof PsiCompiledFile)
+        ? source.getVirtualFile() : null;
+    var document = file == null ? null : FileDocumentManager.getInstance().getDocument(file);
+    if (document == null) return Map.of("status", "source_unavailable", "message", "当前类没有可用的 Java 源文件");
+    if (line > document.getLineCount()) return Map.of("status", "line_out_of_range", "message", "源码中没有第 " + line + " 行");
+    var editor = FileEditorManager.getInstance(project).openTextEditor(new OpenFileDescriptor(project, file, line - 1, 0), true);
+    if (editor == null) return Map.of("status", "not_navigatable");
+    return Map.of("status", "opened", "target", label);
   }
 
   private List<Choice> resolve(NavigationRequest request) {
@@ -72,7 +92,7 @@ public final class NavigatorService implements Disposable {
     var choices = new LinkedHashMap<String, Choice>();
     for (var clazz : classes) {
       if (request.fileUrl() != null && !request.fileUrl().equals(url(clazz))) continue;
-      if (request.methodName() == null) add(choices, clazz, clazz);
+      if (request.methodName() == null) add(choices, clazz, clazz, request.line());
       else {
         var matching = Arrays.stream(clazz.findMethodsByName(request.methodName(), false))
             .filter(m -> matches(m, request.parameterTypes())).toList();
@@ -80,7 +100,7 @@ public final class NavigatorService implements Disposable {
         if (matching.isEmpty()) matching = Arrays.stream(clazz.findMethodsByName(request.methodName(), true))
             .filter(m -> matches(m, request.parameterTypes())).toList();
         // Explicit signatures must never silently fall back to a different overload.
-        for (var method : matching) add(choices, clazz, method);
+        for (var method : matching) add(choices, clazz, method, null);
       }
       if (choices.size() >= 64) break;
     }
@@ -99,17 +119,17 @@ public final class NavigatorService implements Disposable {
     return true;
   }
 
-  private void add(Map<String, Choice> choices, PsiClass searchedClass, PsiElement element) {
+  private void add(Map<String, Choice> choices, PsiClass searchedClass, PsiElement element, Integer line) {
     if (searchedClass.getQualifiedName() == null) return;
     PsiMethod method = element instanceof PsiMethod m ? m : null;
     List<String> params = method == null ? null : Arrays.stream(method.getParameterList().getParameters())
         .map(p -> TypeConversionUtil.erasure(p.getType()).getCanonicalText()).toList();
-    String signature = method == null ? "" : "#" + method.getName() + "(" + String.join(",", params) + ")";
+    String signature = line != null ? ":" + line : method == null ? "" : "#" + method.getName() + "(" + String.join(",", params) + ")";
     String key = url(element) + ":" + element.getTextOffset();
     String label = (method != null && method.getContainingClass() != null
         ? method.getContainingClass().getQualifiedName() : searchedClass.getQualifiedName()) + signature + " — " + url(element);
     PsiClass owner = method == null ? searchedClass : method.getContainingClass();
-    var target = new NavigationRequest(owner.getQualifiedName(), method == null ? null : method.getName(), params, url(owner));
+    var target = new NavigationRequest(owner.getQualifiedName(), method == null ? null : method.getName(), params, url(owner), line);
     choices.putIfAbsent(key, new Choice(target, label, SmartPointerManager.getInstance(project).createSmartPsiElementPointer(element)));
   }
   private static String url(PsiElement element) {
