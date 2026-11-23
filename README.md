@@ -10,36 +10,21 @@ Maintained by **iibobo** · [源码与问题反馈](https://github.com/iibobo/di
 
 新版浏览器 bridge 同时支持时序图生成器的 `data-source-symbol` / `data-source-method` 链接：从页面 `source-map` 的已校验符号与精确方法签名解析目标，不直接信任元素上的 JSON 目标。顶部和底部参与者、链式方法均可独立定位；“检查全部跳转”也会遍历这些入口。更新插件后通过原 Tools 菜单打开时序图 HTML。普通 localhost 预览只显示使用提示；构建与浏览器模拟测试不代表当前 IDEA 已真实打开每个符号。
 
-## 使用步骤
+**在 Codex 中调用绘图技能**
 
-以下截图按提供的 1 → 4 顺序展示。
+<img src="docs/media/codex-diagram-skills.png" alt="在 Codex 中调用绘图技能，为 Spring AI 核心类生成流程图、时序图和类图" width="640">
 
-### 1. 安装并确认插件
+技能仓库见 [iibobo/skills](https://github.com/iibobo/skills)。
 
-安装并启用 Diagram Source Navigator。
+## 源码跳转演示
 
-![1. 安装并确认插件](docs/media/01-install-plugin.png)
+**IDEA 插件 Diagram Source Navigator**
 
-### 2. 在 IDEA 中打开 HTML 类图
+<img src="docs/media/diagram-source-navigator.jpg" alt="JetBrains Marketplace 中的 Diagram Source Navigator 插件" width="640">
 
-点击 IDEA 左下角的 **Diagram Source Navigator** 图标，再点 **Open HTML Diagrams…**。
-也可通过 **Tools → Open Class Diagram with Source Navigation…** 打开同一选择框。
-按住 Shift 选择一段连续的 HTML 文件，或用 macOS 的 Command（Windows/Linux 的 Ctrl）逐个多选。
-确认后，选中的图会分别在浏览器中打开。
+**打开类图，点击类名或方法跳转到 IDEA 源码**
 
-![2. 在 IDEA 中打开 HTML 类图](docs/media/02-open-diagram.png)
-
-### 3. 添加配套技能市场
-
-在 Codex 中添加技能仓库 https://github.com/iibobo/skills，按安装指南安装配套技能。
-
-![3. 添加配套技能市场](docs/media/03-add-skills-marketplace.png)
-
-### 4. 调用技能生成类图
-
-调用绘制类图技能，描述需要梳理的 Java 模块并生成带源码导航信息的 HTML。
-
-![4. 调用技能生成类图](docs/media/04-generate-diagram.png)
+![使用 Diagram Source Navigator 从 Mermaid 类图跳转到 IDEA 中的 Java 类和方法](docs/media/idea-source-navigation.gif)
 
 ## 配套技能
 
